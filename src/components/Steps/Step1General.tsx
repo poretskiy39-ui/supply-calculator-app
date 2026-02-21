@@ -36,6 +36,20 @@ const Grid = styled.div`
   gap: ${theme.spacing.md};
 `;
 
+// Адаптивная сетка специально для трёх полей валют
+const CurrencyGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: ${theme.spacing.md};
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  @media (max-width: 360px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
 const Row = styled.div`
   display: flex;
   justify-content: space-between;
@@ -67,7 +81,7 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
         cnyRate: rates.cny,
       });
     }
-  }, [rates, onUpdate]); // добавили onUpdate в зависимости
+  }, [rates, onUpdate]);
 
   return (
     <Container>
@@ -78,7 +92,7 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
 
       <Section>
         <SectionTitle>Валюты и курс</SectionTitle>
-        <Grid>
+        <CurrencyGrid>
           <CurrencyInput
             label="Курс USD → RUB"
             value={settings.exchangeRate}
@@ -100,7 +114,7 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
             min={0}
             step={0.01}
           />
-        </Grid>
+        </CurrencyGrid>
         <Row style={{ marginTop: theme.spacing.md }}>
           Валюта инвойса: {settings.invoiceCurrency}
         </Row>
