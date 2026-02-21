@@ -6,6 +6,7 @@ const InputWrapper = styled.div`
   display: flex;
   flex-direction: column;
   gap: ${theme.spacing.xs};
+  width: 100%;
 `;
 
 const Label = styled.label`
@@ -14,6 +15,9 @@ const Label = styled.label`
 `;
 
 const StyledInput = styled.input`
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   padding: ${theme.spacing.md} ${theme.spacing.lg};
   background: ${theme.colors.surfaceLight};
   border: 1px solid ${theme.colors.border};
