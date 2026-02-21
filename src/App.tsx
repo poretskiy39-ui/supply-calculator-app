@@ -130,6 +130,8 @@ function App() {
         return result ? (
           <Step4Result
             result={result}
+            products={products}
+            settings={settings}
             onBack={handleBack}
             onContinue={handleContinueToContact}
           />
