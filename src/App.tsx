@@ -48,18 +48,16 @@ const NavButtonSecondary = styled(SecondaryButton)`
 function App() {
   const { step, setStep, settings, setSettings, products, addProduct, removeProduct, updateProduct, calculate } =
     useCalculator();
-  const { tg, showAlert, sendData } = useTelegram();
+  const { tg, showAlert, close } = useTelegram(); // sendData больше не нужен, убрали
 
   const handleNext = () => {
     if (step === 1) {
-      // Валидация шага 1
       if (settings.exchangeRate <= 0) {
         showAlert('Укажите корректный курс валюты');
         return;
       }
     }
     if (step === 2) {
-      // Валидация товаров: хотя бы один товар с ценой > 0
       const hasValidProduct = products.some(p => p.price > 0 && p.quantity > 0);
       if (!hasValidProduct) {
         showAlert('Добавьте хотя бы один товар с ценой и количеством');
@@ -93,7 +91,7 @@ function App() {
       });
       if (response.ok) {
         showAlert('Заявка отправлена! Менеджер свяжется с вами.');
-        tg?.close();
+        close(); // используем close вместо tg.close()
       } else {
         showAlert('Ошибка при отправке. Попробуйте позже.');
       }
