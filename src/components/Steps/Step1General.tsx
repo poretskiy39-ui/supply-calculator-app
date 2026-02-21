@@ -61,14 +61,13 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
 
   useEffect(() => {
     if (rates) {
-      // Обновляем курсы, если они загрузились
       onUpdate({
         exchangeRate: rates.usd,
         euroRate: rates.eur,
         cnyRate: rates.cny,
       });
     }
-  }, [rates]);
+  }, [rates, onUpdate]); // добавили onUpdate в зависимости
 
   return (
     <Container>
