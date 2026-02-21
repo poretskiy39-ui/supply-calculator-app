@@ -79,7 +79,7 @@ function App() {
     }
     try {
       // ЗАМЕНИТЕ ЭТОТ URL НА АДРЕС ВАШЕГО БЭКЕНДА ПОСЛЕ ДЕПЛОЯ
-      const response = await fetch('supply-calculator-app-production.up.railway.app', {
+      const response = await fetch('supply-calculator-app-production.up.railway.app/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
