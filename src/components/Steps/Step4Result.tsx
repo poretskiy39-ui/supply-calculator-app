@@ -1,9 +1,11 @@
 import React from 'react';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import styled from 'styled-components';
-import { CalculationResult } from '../../types';
+import { CalculationResult, Product, GeneralSettings } from '../../types';
 import { formatCurrency } from '../../utils/formatters';
 import { theme } from '../../styles/theme';
 import { PrimaryButton, SecondaryButton } from '../UI';
+import PDFDocument from '../PDFDocument';
 
 const Container = styled.div`
   padding: ${theme.spacing.lg};
@@ -84,24 +86,39 @@ const ItemValue = styled.span`
 
 const ButtonGroup = styled.div`
   display: flex;
+  flex-wrap: wrap;
   gap: ${theme.spacing.md};
   margin-top: ${theme.spacing.xl};
 `;
 
 const BackBtn = styled(SecondaryButton)`
   flex: 1;
+  min-width: 120px;
 `;
 const SubmitBtn = styled(PrimaryButton)`
   flex: 1;
+  min-width: 120px;
+`;
+const PdfBtn = styled(PrimaryButton)`
+  flex: 1;
+  min-width: 120px;
+  background: ${theme.colors.surfaceLight};
+  color: ${theme.colors.text};
+  border: 1px solid ${theme.colors.border};
+  &:hover {
+    background: ${theme.colors.surface};
+  }
 `;
 
 interface Props {
   result: CalculationResult;
+  products: Product[];
+  settings: GeneralSettings;
   onBack: () => void;
   onContinue: () => void;
 }
 
-const Step4Result: React.FC<Props> = ({ result, onBack, onContinue }) => {
+const Step4Result: React.FC<Props> = ({ result, products, settings, onBack, onContinue }) => {
   return (
     <Container>
       <Title>Результаты расчёта</Title>
@@ -195,8 +212,18 @@ const Step4Result: React.FC<Props> = ({ result, onBack, onContinue }) => {
       </Breakdown>
 
       <ButtonGroup>
-        <BackBtn type="button" onClick={onBack} aria-label="Вернуться к логистике">← Назад</BackBtn>
-        <SubmitBtn type="button" onClick={onContinue} aria-label="Отправить заявку менеджеру">Отправить заявку</SubmitBtn>
+        <BackBtn type="button" onClick={onBack}>← Назад</BackBtn>
+        <PDFDownloadLink
+          document={<PDFDocument products={products} settings={settings} result={result} />}
+          fileName="SupplyMaster_calculation.pdf"
+        >
+          {({ loading }) => (
+            <PdfBtn type="button" disabled={loading}>
+              {loading ? 'Генерация...' : 'Скачать PDF'}
+            </PdfBtn>
+          )}
+        </PDFDownloadLink>
+        <SubmitBtn type="button" onClick={onContinue}>Отправить заявку</SubmitBtn>
       </ButtonGroup>
     </Container>
   );
