@@ -1,0 +1,41 @@
+export const theme = {
+    colors: {
+      bg: '#0F1A2F',
+      surface: '#1E2A3A',
+      surfaceLight: '#2A3647',
+      accent: '#C6A15B',
+      accentHover: '#D4B37A',
+      text: '#FFFFFF',
+      textSecondary: 'rgba(255,255,255,0.7)',
+      textMuted: 'rgba(255,255,255,0.5)',
+      border: 'rgba(255,255,255,0.1)',
+      error: '#FF6B6B',
+      success: '#4CAF50',
+    },
+    spacing: {
+      xs: '4px',
+      sm: '8px',
+      md: '16px',
+      lg: '24px',
+      xl: '32px',
+    },
+    borderRadius: {
+      sm: '12px',
+      md: '16px',
+      lg: '24px',
+      xl: '32px',
+    },
+    typography: {
+      fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+      h1: '32px',
+      h2: '24px',
+      body: '16px',
+      small: '14px',
+      lineHeight: {
+        tight: 1.2,
+        normal: 1.4,
+        relaxed: 1.5,
+      },
+    },
+    transition: '0.2s ease',
+  };

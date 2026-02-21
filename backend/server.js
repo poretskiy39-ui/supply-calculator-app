@@ -1,0 +1,41 @@
+const express = require('express');
+const cors = require('cors');
+const { Telegraf } = require('telegraf');
+require('dotenv').config();
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const bot = new Telegraf(process.env.BOT_TOKEN);
+const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
+
+app.use(cors());
+app.use(express.json());
+
+app.post('/api/contact', async (req, res) => {
+  try {
+    const data = req.body;
+    console.log('New application:', data);
+
+    const message = `
+📬 Новая заявка с расчётом!
+
+👤 Пользователь: ${data.telegramUser?.username || 'неизвестен'} (ID: ${data.telegramUser?.id || 'нет'})
+
+📦 Данные:
+• Товаров: ${data.products?.length || 0}
+• Итоговая стоимость: ${Math.round(data.result?.totalRub || 0).toLocaleString()} ₽
+• Себестоимость ед.: ${Math.round(data.result?.costPerItem || 0).toLocaleString()} ₽
+
+🕐 ${new Date().toLocaleString('ru-RU')}
+    `;
+
+    await bot.telegram.sendMessage(ADMIN_CHAT_ID, message);
+    res.json({ success: true });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Internal error' });
+  }
+});
+
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
