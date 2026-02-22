@@ -18,11 +18,11 @@ const Steps = styled.div`
 `;
 
 interface StepProps {
-  active: boolean;
+  $active: boolean;
 }
 
 const Step = styled.span<StepProps>`
-  color: ${props => (props.active ? theme.colors.accent : theme.colors.textMuted)};
+  color: ${props => (props.$active ? theme.colors.accent : theme.colors.textMuted)};
   transition: color 0.2s;
   min-width: 0;
   flex: 1;
@@ -65,7 +65,7 @@ const ProgressBar: React.FC<Props> = ({ step }) => {
     <Container>
       <Steps>
         {stepNames.map((name, i) => (
-          <Step key={i} active={i + 1 === step}>
+          <Step key={i} $active={i + 1 === step}>
             {i + 1}. {name}
           </Step>
         ))}
