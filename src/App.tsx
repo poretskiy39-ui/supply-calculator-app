@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
 import useCalculator from './hooks/useCalculator';
@@ -48,7 +48,16 @@ const NavButtonSecondary = styled(SecondaryButton)`
 function App() {
   const { step, setStep, settings, setSettings, products, addProduct, removeProduct, updateProduct, calculate } =
     useCalculator();
-  const { tg, showAlert, close } = useTelegram(); // sendData больше не нужен, убрали
+  const { tg, showAlert, close } = useTelegram();
+
+  // Мемоизируем обработчики обновления настроек, чтобы избежать бесконечных ререндеров
+  const handleUpdateGeneral = useCallback((newSettings: Partial<GeneralSettings>) => {
+    setSettings(prev => ({ ...prev, ...newSettings }));
+  }, [setSettings]);
+
+  const handleUpdateLogistics = useCallback((newSettings: Partial<GeneralSettings>) => {
+    setSettings(prev => ({ ...prev, ...newSettings }));
+  }, [setSettings]);
 
   const handleNext = () => {
     if (step === 1) {
@@ -78,8 +87,8 @@ function App() {
       return;
     }
     try {
-      // ЗАМЕНИТЕ ЭТОТ URL НА АДРЕС ВАШЕГО БЭКЕНДА ПОСЛЕ ДЕПЛОЯ
-      const response = await fetch('supply-calculator-app-production.up.railway.app/api/contact', {
+      // ЗАМЕНИТЕ ЭТОТ URL НА РЕАЛЬНЫЙ АДРЕС БЭКЕНДА (например, Railway)
+      const response = await fetch('https://your-backend.up.railway.app/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -91,7 +100,7 @@ function App() {
       });
       if (response.ok) {
         showAlert('Заявка отправлена! Менеджер свяжется с вами.');
-        close(); // используем close вместо tg.close()
+        close();
       } else {
         showAlert('Ошибка при отправке. Попробуйте позже.');
       }
@@ -106,7 +115,7 @@ function App() {
         return (
           <Step1General
             settings={settings}
-            onUpdate={(newSettings: Partial<GeneralSettings>) => setSettings({ ...settings, ...newSettings })}
+            onUpdate={handleUpdateGeneral}
           />
         );
       case 2:
@@ -122,7 +131,7 @@ function App() {
         return (
           <Step3Logistics
             settings={settings}
-            onUpdate={(newSettings: Partial<GeneralSettings>) => setSettings({ ...settings, ...newSettings })}
+            onUpdate={handleUpdateLogistics}
           />
         );
       case 4: {
