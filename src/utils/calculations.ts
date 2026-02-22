@@ -1,59 +1,53 @@
 import { Product, GeneralSettings, CalculationResult } from '../types';
 
-// Расчёт объёмного веса (коэффициент 200 для всех типов транспорта, можно уточнить)
-const VOLUMETRIC_FACTOR = 200; // кг/м³
+// Коэффициенты объёмного веса для разных типов транспорта (кг/м³)
+const VOLUMETRIC_FACTORS = {
+  avia: 167,   // для авиа обычно 167 кг/м³
+  sea: 1000,   // для моря 1000 кг/м³ (т.е. 1 м³ = 1000 кг)
+  rail: 300,   // для ЖД часто 300-350
+  auto: 300,   // для авто тоже около 300
+};
 
 // Расчёт платного веса для одного товара с учётом упаковки
 export const calcProductPayableWeight = (
   product: Product,
-  transportType: string
+  transportType: keyof typeof VOLUMETRIC_FACTORS
 ): number => {
-  // Если есть упаковка, используем данные мастер-бокса
   let totalWeight = 0;
   let totalVolume = 0;
 
   if (product.packingQtyPerBox && product.packingQtyPerBox > 0) {
-    // Рассчитываем количество коробок
     const boxes = Math.ceil(product.quantity / product.packingQtyPerBox);
-    // Вес брутто всех коробок
     if (product.packingBoxWeight) {
       totalWeight = boxes * product.packingBoxWeight;
     } else {
-      // Если нет веса бокса, используем вес нетто * количество
       totalWeight = product.weightNetto * product.quantity;
     }
-    // Объём всех коробок
     if (product.packingBoxLength && product.packingBoxWidth && product.packingBoxHeight) {
       const boxVolumeM3 = (product.packingBoxLength * product.packingBoxWidth * product.packingBoxHeight) / 1_000_000;
       totalVolume = boxes * boxVolumeM3;
     } else {
-      // Если нет габаритов бокса, считаем объём товара * количество
       const itemVolumeM3 = (product.length * product.width * product.height) / 1_000_000;
       totalVolume = itemVolumeM3 * product.quantity;
     }
   } else {
-    // Без упаковки
     totalWeight = product.weightNetto * product.quantity;
     const itemVolumeM3 = (product.length * product.width * product.height) / 1_000_000;
     totalVolume = itemVolumeM3 * product.quantity;
   }
 
-  // Объёмный вес
-  const volumetricWeight = totalVolume * VOLUMETRIC_FACTOR;
+  const volumetricWeight = totalVolume * VOLUMETRIC_FACTORS[transportType];
   return Math.max(totalWeight, volumetricWeight);
 };
 
-// Расчёт общей стоимости инвойса в валюте
 export const calcTotalInvoice = (products: Product[]): number => {
   return products.reduce((sum, p) => sum + p.price * p.quantity, 0);
 };
 
-// Расчёт общей массы нетто (для последней мили)
 export const calcTotalWeightNetto = (products: Product[]): number => {
   return products.reduce((sum, p) => sum + p.weightNetto * p.quantity, 0);
 };
 
-// Расчёт общей стоимости Честного знака
 export const calcTotalMarking = (products: Product[]): number => {
   return products.reduce((sum, p) => {
     if (p.needMarking && p.markingPrice) {
@@ -63,7 +57,6 @@ export const calcTotalMarking = (products: Product[]): number => {
   }, 0);
 };
 
-// Основная функция расчёта всех затрат
 export const calculateTotalCost = (
   products: Product[],
   settings: GeneralSettings
@@ -88,67 +81,66 @@ export const calculateTotalCost = (
     agentRewardPercent,
   } = settings;
 
-  // Выбираем курс в зависимости от валюты инвойса
-  let effectiveRate = exchangeRate; // по умолчанию USD
+  let effectiveRate = exchangeRate;
   if (invoiceCurrency === 'EUR') effectiveRate = euroRate;
   else if (invoiceCurrency === 'CNY') effectiveRate = cnyRate;
 
-  // 1. Инвойс в рублях
   const totalInvoiceCurrency = calcTotalInvoice(products);
   const invoiceRub = totalInvoiceCurrency * effectiveRate;
 
-  // 2. Логистика
+  // 2. Логистика (платный вес зависит от транспорта)
   let totalPayableWeight = 0;
   products.forEach(p => {
     totalPayableWeight += calcProductPayableWeight(p, transportType);
   });
-  const logisticsCurrency = totalPayableWeight * logisticsRate; // в USD
+  const logisticsCurrency = totalPayableWeight * logisticsRate;
   const logisticsRub = logisticsCurrency * effectiveRate;
 
-  // 3. Страховка (обычно % от инвойса + логистика)
+  // 3. Страховка
   const insuranceRub = (totalInvoiceCurrency + logisticsCurrency) * (insurancePercent / 100) * effectiveRate;
 
-  // 4. Комиссия экспортёра (от инвойса)
+  // 4. Комиссия экспортёра
   const exporterCommissionRub = totalInvoiceCurrency * (exporterCommissionPercent / 100) * effectiveRate;
 
-  // 5. Комиссия платёжного агента (от инвойса + комиссия экспортёра)
-  const agentBase = totalInvoiceCurrency + (totalInvoiceCurrency * (exporterCommissionPercent / 100));
-  const agentCommissionRub = agentBase * (agentCommissionPercent / 100) * effectiveRate;
+  // 5. Комиссия платежного агента (обратный процент)
+  // Сумма, которую нужно отправить агенту, чтобы после удержания комиссии фабрика получила чистый инвойс
+  const agentBaseCurrency = totalInvoiceCurrency + (totalInvoiceCurrency * (exporterCommissionPercent / 100)); // уже с комиссией экспортёра
+  const agentCommissionCurrency = agentBaseCurrency * (agentCommissionPercent / 100) / (1 - agentCommissionPercent / 100); // обратный процент
+  const agentCommissionRub = agentCommissionCurrency * effectiveRate;
 
-  // 6. Таможенная стоимость = инвойс + логистика до границы + страховка
+  // 6. Таможенная стоимость (упрощённо: инвойс + логистика + страховка)
   const customsValueRub = invoiceRub + logisticsRub + insuranceRub;
 
   // 7. Пошлина (пропорционально доле товара)
   let dutyRub = 0;
   products.forEach(p => {
     const productInvoice = p.price * p.quantity;
-    const productShare = productInvoice / totalInvoiceCurrency; // доля товара в инвойсе
-    const productCustomsPart = customsValueRub * productShare; // часть таможенной стоимости, приходящаяся на товар
+    const productShare = productInvoice / totalInvoiceCurrency;
+    const productCustomsPart = customsValueRub * productShare;
     if (p.dutyPercent) {
       dutyRub += productCustomsPart * (p.dutyPercent / 100);
     } else if (p.dutyEuro) {
-      // Предполагаем, что dutyEuro указана за единицу товара
       dutyRub += p.dutyEuro * p.quantity * euroRate;
     }
   });
 
-  // 8. НДС = (таможенная стоимость + пошлина) * 20%
+  // 8. НДС
   const vatRub = (customsValueRub + dutyRub) * 0.2;
 
-  // 9. Таможенный сбор (фикс)
+  // 9. Таможенный сбор
   const customsFeeRub = customsFee;
 
   // 10. Подача декларации
   const declarationCostRub = declarationCost;
 
-  // 11. Терминальная обработка
+  // 11. Терминал
   const terminalCostRub = terminalCost;
 
-  // 12. Последняя миля (за кг нетто)
+  // 12. Последняя миля
   const totalWeightNetto = calcTotalWeightNetto(products);
   const lastMileRub = totalWeightNetto * lastMileCostPerKg;
 
-  // 13. Комиссии банков (от инвойса в рублях)
+  // 13. Комиссии банков (от инвойса)
   const bankCommissionsRub = invoiceRub * (
     (bankCommissionPercent + bankTransferFeePercent + bankControlFeePercent) / 100
   );
@@ -156,7 +148,7 @@ export const calculateTotalCost = (
   // 14. Честный знак
   const markingRub = calcTotalMarking(products);
 
-  // 15. Агентское вознаграждение (от всех затрат до него)
+  // 15. Агентское вознаграждение
   const subtotalBeforeReward =
     invoiceRub +
     logisticsRub +
@@ -174,10 +166,7 @@ export const calculateTotalCost = (
 
   const agentRewardRub = subtotalBeforeReward * (agentRewardPercent / 100);
 
-  // Итого
   const totalRub = subtotalBeforeReward + agentRewardRub;
-
-  // Средняя себестоимость единицы
   const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
   const costPerItem = totalQuantity > 0 ? totalRub / totalQuantity : 0;
 
