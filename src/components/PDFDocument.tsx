@@ -125,9 +125,6 @@ interface Props {
 }
 
 const PDFDocument: React.FC<Props> = ({ products, settings, result }) => {
-  const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
-  const totalWeight = products.reduce((sum, p) => sum + p.weightNetto * p.quantity, 0);
-
   return (
     <Document>
       <Page size="A4" style={styles.page}>
