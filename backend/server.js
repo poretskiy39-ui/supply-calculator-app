@@ -9,8 +9,12 @@ const PORT = process.env.PORT || 3000;
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
-// Разрешаем CORS для всех источников
-app.use(cors());
+// Разрешаем CORS для всех источников (включая localhost и Vercel)
+app.use(cors({
+  origin: '*', // для теста можно так, позже сузишь до конкретного домена
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type']
+}));
 app.options('*', cors()); // обработка preflight запросов
 
 app.use(express.json());
