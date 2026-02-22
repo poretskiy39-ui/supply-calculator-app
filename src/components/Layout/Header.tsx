@@ -32,6 +32,7 @@ const MenuButton = styled.button`
   cursor: pointer;
   transition: all 0.2s;
   z-index: 2;
+  white-space: nowrap;
 
   &:hover {
     border-color: ${theme.colors.accent};
@@ -54,17 +55,25 @@ const Decoration = styled.div`
 
 interface Props {
   onMenuClick?: () => void;
+  onDirectoryClick?: () => void; // добавляем проп для справочника
 }
 
-const Header: React.FC<Props> = ({ onMenuClick }) => {
+const Header: React.FC<Props> = ({ onMenuClick, onDirectoryClick }) => {
   return (
     <HeaderContainer>
       <Title>MOVERS GROUP</Title>
-      {onMenuClick && (
-        <MenuButton onClick={onMenuClick}>
-          ☰ Меню
-        </MenuButton>
-      )}
+      <div style={{ display: 'flex', gap: theme.spacing.sm }}>
+        {onDirectoryClick && (
+          <MenuButton onClick={onDirectoryClick}>
+            📚 Справочник
+          </MenuButton>
+        )}
+        {onMenuClick && (
+          <MenuButton onClick={onMenuClick}>
+            ☰ Меню
+          </MenuButton>
+        )}
+      </div>
       <Decoration />
     </HeaderContainer>
   );

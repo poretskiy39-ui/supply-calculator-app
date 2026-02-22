@@ -8,6 +8,9 @@ import type { GeneralSettings } from './types';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import ProgressBar from './components/Layout/ProgressBar';
+import Modal from './components/Modal'; // новый компонент для модального окна
+import Directory from './components/Directory'; // компонент справочника
+import { directorySections } from './data/directoryData'; // данные справочника
 import Step0Welcome from './components/Steps/Step0Welcome';
 import Step1General from './components/Steps/Step1General';
 import Step2Products from './components/Steps/Step2Products';
@@ -74,6 +77,7 @@ function App() {
   const { tg, showAlert, close } = useTelegram();
 
   const [showSuccess, setShowSuccess] = useState(false);
+  const [isDirectoryOpen, setIsDirectoryOpen] = useState(false); // состояние для модалки справочника
 
   const fullSteps = ['Общие', 'Товары', 'Логистика', 'Итог', 'Контакты'];
   const logisticsSteps = ['Груз', 'Расчёт', 'Контакты'];
@@ -95,6 +99,14 @@ function App() {
 
   const handleMenuClick = () => {
     setStep(0);
+  };
+
+  const handleDirectoryClick = () => {
+    setIsDirectoryOpen(true);
+  };
+
+  const handleCloseDirectory = () => {
+    setIsDirectoryOpen(false);
   };
 
   const handleNext = () => {
@@ -130,7 +142,7 @@ function App() {
         return;
       }
       try {
-        const response = await fetch('https://your-backend.up.railway.app/api/contact', {
+        const response = await fetch('https://supply-calculator-app-production.up.railway.app/api/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -268,7 +280,7 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <AppContainer>
-        <Header onMenuClick={handleMenuClick} />
+        <Header onMenuClick={handleMenuClick} onDirectoryClick={handleDirectoryClick} />
         {step > 0 && (
           <ProgressBar 
             step={step} 
@@ -303,9 +315,15 @@ function App() {
         {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
         <Footer />
       </AppContainer>
+
+      {/* Модальное окно справочника */}
+      {isDirectoryOpen && (
+        <Modal onClose={handleCloseDirectory}>
+          <Directory sections={directorySections} />
+        </Modal>
+      )}
     </ThemeProvider>
   );
 }
 
 export default App;
-
