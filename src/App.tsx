@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { theme } from './styles/theme';
 import useCalculator from './hooks/useCalculator';
@@ -11,6 +11,8 @@ import Step1General from './components/Steps/Step1General';
 import Step2Products from './components/Steps/Step2Products';
 import Step3Logistics from './components/Steps/Step3Logistics';
 import Step4Result from './components/Steps/Step4Result';
+import Step5Contact from './components/Steps/Step5Contact';
+import SuccessMessage from './components/SuccessMessage';
 import { PrimaryButton, SecondaryButton } from './components/UI';
 
 const AppContainer = styled.div`
@@ -46,18 +48,36 @@ const NavButtonSecondary = styled(SecondaryButton)`
 `;
 
 function App() {
-  const { step, setStep, settings, setSettings, products, addProduct, removeProduct, updateProduct, calculate } =
-    useCalculator();
+  const {
+    step,
+    setStep,
+    settings,
+    setSettings,
+    products,
+    addProduct,
+    removeProduct,
+    updateProduct,
+    calculate,
+    contact,
+    updateContact,
+  } = useCalculator();
   const { tg, showAlert, close } = useTelegram();
 
-  // Мемоизируем обработчики обновления настроек, чтобы избежать бесконечных ререндеров
-  const handleUpdateGeneral = useCallback((newSettings: Partial<GeneralSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, [setSettings]);
+  const [showSuccess, setShowSuccess] = useState(false); // для сообщения об успехе
 
-  const handleUpdateLogistics = useCallback((newSettings: Partial<GeneralSettings>) => {
-    setSettings(prev => ({ ...prev, ...newSettings }));
-  }, [setSettings]);
+  const handleUpdateGeneral = useCallback(
+    (newSettings: Partial<GeneralSettings>) => {
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+    },
+    [setSettings]
+  );
+
+  const handleUpdateLogistics = useCallback(
+    (newSettings: Partial<GeneralSettings>) => {
+      setSettings((prev) => ({ ...prev, ...newSettings }));
+    },
+    [setSettings]
+  );
 
   const handleNext = () => {
     if (step === 1) {
@@ -67,7 +87,7 @@ function App() {
       }
     }
     if (step === 2) {
-      const hasValidProduct = products.some(p => p.price > 0 && p.quantity > 0);
+      const hasValidProduct = products.some((p) => p.price > 0 && p.quantity > 0);
       if (!hasValidProduct) {
         showAlert('Добавьте хотя бы один товар с ценой и количеством');
         return;
@@ -80,14 +100,18 @@ function App() {
     if (step > 1) setStep(step - 1);
   };
 
-  const handleContinueToContact = async () => {
+  const handleRequestContact = () => {
+    setStep(5);
+  };
+
+  const handleSubmitContact = async () => {
     const result = calculate();
     if (!result) {
       showAlert('Ошибка расчёта. Проверьте данные.');
       return;
     }
     try {
-      // ЗАМЕНИТЕ ЭТОТ URL НА РЕАЛЬНЫЙ АДРЕС БЭКЕНДА (например, Railway)
+      // ЗАМЕНИТЕ URL НА АДРЕС ВАШЕГО БЭКЕНДА
       const response = await fetch('https://supply-calculator-app-production.up.railway.app/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -95,12 +119,15 @@ function App() {
           settings,
           products,
           result,
+          contact,
           telegramUser: tg?.initDataUnsafe?.user,
         }),
       });
       if (response.ok) {
-        showAlert('Заявка отправлена! Менеджер свяжется с вами.');
-        close();
+        setShowSuccess(true);
+        setTimeout(() => {
+          close(); // закрываем приложение через 3 секунды после показа сообщения
+        }, 3000);
       } else {
         showAlert('Ошибка при отправке. Попробуйте позже.');
       }
@@ -112,12 +139,7 @@ function App() {
   const renderStep = () => {
     switch (step) {
       case 1:
-        return (
-          <Step1General
-            settings={settings}
-            onUpdate={handleUpdateGeneral}
-          />
-        );
+        return <Step1General settings={settings} onUpdate={handleUpdateGeneral} />;
       case 2:
         return (
           <Step2Products
@@ -128,12 +150,7 @@ function App() {
           />
         );
       case 3:
-        return (
-          <Step3Logistics
-            settings={settings}
-            onUpdate={handleUpdateLogistics}
-          />
-        );
+        return <Step3Logistics settings={settings} onUpdate={handleUpdateLogistics} />;
       case 4: {
         const result = calculate();
         return result ? (
@@ -142,12 +159,21 @@ function App() {
             products={products}
             settings={settings}
             onBack={handleBack}
-            onContinue={handleContinueToContact}
+            onContinue={handleRequestContact}
           />
         ) : (
           <div>Ошибка расчёта</div>
         );
       }
+      case 5:
+        return (
+          <Step5Contact
+            contact={contact}
+            onUpdate={updateContact}
+            onBack={() => setStep(4)}
+            onSubmit={handleSubmitContact}
+          />
+        );
       default:
         return null;
     }
@@ -162,16 +188,17 @@ function App() {
         {step < 4 && (
           <NavWrap>
             {step > 1 && (
-              <NavButtonSecondary type="button" onClick={handleBack} aria-label="Предыдущий шаг">
+              <NavButtonSecondary type="button" onClick={handleBack}>
                 Назад
               </NavButtonSecondary>
             )}
-            <NavButton type="button" onClick={handleNext} aria-label={step === 3 ? 'Рассчитать стоимость' : 'Следующий шаг'}>
+            <NavButton type="button" onClick={handleNext}>
               {step === 3 ? 'Рассчитать' : 'Далее'}
             </NavButton>
           </NavWrap>
         )}
         <Footer />
+        {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
       </AppContainer>
     </ThemeProvider>
   );
