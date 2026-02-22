@@ -1,3 +1,5 @@
+export type ServiceType = 'full' | 'logistics';
+
 export interface Product {
   id: string;
   name: string;
@@ -69,10 +71,45 @@ export interface ExchangeRates {
   date: string;
 }
 
-// 🔸 НОВЫЙ ИНТЕРФЕЙС
 export interface ContactInfo {
   name: string;
   company: string;
   phone: string;
   email: string;
+}
+
+// ========== НОВЫЕ ТИПЫ ДЛЯ РЕЖИМА "ЛОГИСТИКА" ==========
+
+export type ContainerType = '20DC' | '40HC';
+export type ChinaPort = 'Shanghai' | 'Ningbo' | 'Xingang (Tianjin)' | 'Qingdao' | 'Dalian';
+export type DestinationCity = 'Москва' | 'Санкт-Петербург';
+
+export interface LogisticsData {
+  productName: string;
+  hsCode: string;
+  invoiceAmount: number;         // стоимость товара по инвойсу (в валюте)
+  invoiceCurrency: 'USD' | 'EUR' | 'CNY';
+  weightGross: number;           // вес брутто груза (кг)
+  containerType: ContainerType;
+  portOfLoading: ChinaPort;
+  destinationCity: DestinationCity;
+  needCustoms: boolean;
+  customsDutyPercent: number;    // ставка пошлины в % (если нужна таможня)
+  insurancePercent: number;      // страховка (% от инвойса)
+}
+
+export interface LogisticsResult {
+  totalRub: number;
+  details: {
+    oceanFreightRub: number;
+    railFreightRub: number;
+    lastMileRub: number;
+    customsValueRub: number;
+    dutyRub: number;
+    vatRub: number;
+    agentCommissionRub: number;
+    insuranceRub: number;
+    note?: string;
+  };
+  inputData: LogisticsData;
 }

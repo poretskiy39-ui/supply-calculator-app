@@ -52,7 +52,7 @@ const PDFDocument: React.FC<Props> = ({ products, settings, result }) => {
         {/* Шапка с логотипом и названием */}
         <View style={styles.header}>
           <View>
-            <Text style={styles.title}>SupplyMaster</Text>
+            <Text style={styles.title}>MOVERS GROUP</Text>
             <Text style={styles.subtitle}>Профессиональный расчёт поставок</Text>
           </View>
           <Image src="/logo.png" style={styles.logo} />

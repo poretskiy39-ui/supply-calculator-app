@@ -24,13 +24,8 @@ interface StepProps {
 const Step = styled.span<StepProps>`
   color: ${props => (props.$active ? theme.colors.accent : theme.colors.textMuted)};
   transition: color 0.2s;
-  min-width: 0;
   flex: 1;
   text-align: center;
-
-  @media (max-width: 360px) {
-    font-size: 12px;
-  }
 `;
 
 const Bar = styled.div`
@@ -38,7 +33,6 @@ const Bar = styled.div`
   background: ${theme.colors.border};
   border-radius: 5px;
   overflow: hidden;
-  box-shadow: inset 0 1px 2px rgba(0,0,0,0.2);
 `;
 
 interface FillProps {
@@ -50,21 +44,20 @@ const Fill = styled.div<FillProps>`
   background: linear-gradient(90deg, ${theme.colors.accent} 0%, ${theme.colors.accentHover} 100%);
   width: ${props => props.width};
   transition: width 0.3s ease;
-  border-radius: 5px;
 `;
 
 interface Props {
   step: number;
+  steps: string[];
 }
 
-const ProgressBar: React.FC<Props> = ({ step }) => {
-  const stepNames = ['Общие', 'Товары', 'Логистика', 'Итог'];
-  const percent = `${(step / 4) * 100}%`;
+const ProgressBar: React.FC<Props> = ({ step, steps }) => {
+  const percent = `${(step / steps.length) * 100}%`;
 
   return (
     <Container>
       <Steps>
-        {stepNames.map((name, i) => (
+        {steps.map((name, i) => (
           <Step key={i} $active={i + 1 === step}>
             {i + 1}. {name}
           </Step>

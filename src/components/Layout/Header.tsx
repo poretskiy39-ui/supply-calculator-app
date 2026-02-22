@@ -7,24 +7,34 @@ const HeaderContainer = styled.header`
   padding: ${theme.spacing.xl} ${theme.spacing.lg};
   position: relative;
   overflow: hidden;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 `;
 
 const Title = styled.h1`
   font-size: ${theme.typography.h1};
   font-weight: 700;
   color: ${theme.colors.text};
-  margin-bottom: ${theme.spacing.xs};
   letter-spacing: -0.5px;
+  margin: 0;
 `;
 
-const Accent = styled.span`
-  color: ${theme.colors.accent};
-  font-weight: 600;
-`;
-
-const Subtitle = styled.p`
+const MenuButton = styled.button`
+  background: transparent;
+  border: 1px solid ${theme.colors.border};
+  color: ${theme.colors.text};
+  padding: ${theme.spacing.sm} ${theme.spacing.md};
+  border-radius: ${theme.borderRadius.md};
   font-size: ${theme.typography.small};
-  color: ${theme.colors.textSecondary};
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+
+  &:hover {
+    border-color: ${theme.colors.accent};
+    background: ${theme.colors.surfaceLight};
+  }
 `;
 
 const Decoration = styled.div`
@@ -38,16 +48,23 @@ const Decoration = styled.div`
   z-index: 1;
 `;
 
-const Header: React.FC = () => {
+interface Props {
+  onMenuClick?: () => void; // колбэк для возврата в меню
+}
+
+const Header: React.FC<Props> = ({ onMenuClick }) => {
   return (
     <HeaderContainer>
-      <Title>
-        Supply<Accent>Master</Accent>
-      </Title>
-      <Subtitle>Профессиональный расчёт поставок</Subtitle>
+      <Title>MOVERS GROUP</Title>
+      {onMenuClick && (
+        <MenuButton onClick={onMenuClick}>
+          ☰ Меню
+        </MenuButton>
+      )}
       <Decoration />
     </HeaderContainer>
   );
 };
 
 export default Header;
+

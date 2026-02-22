@@ -1,6 +1,10 @@
 import { useState } from 'react';
-import { Product, GeneralSettings, CalculationResult, ContactInfo } from '../types';
-import { calculateTotalCost } from '../utils/calculations';
+import { 
+  Product, GeneralSettings, CalculationResult, ContactInfo, 
+  ServiceType, LogisticsData, LogisticsResult 
+} from '../types';
+import { calculateTotalCost } from '../utils/calculations/full'; // теперь путь правильный
+import { calculateLogistics } from '../utils/calculations/logistics';
 
 const defaultSettings: GeneralSettings = {
   invoiceCurrency: 'USD',
@@ -23,8 +27,23 @@ const defaultSettings: GeneralSettings = {
   agentRewardPercent: 10,
 };
 
+const defaultLogisticsData: LogisticsData = {
+  productName: '',
+  hsCode: '',
+  invoiceAmount: 0,
+  invoiceCurrency: 'USD',
+  weightGross: 0,
+  containerType: '20DC',
+  portOfLoading: 'Shanghai',
+  destinationCity: 'Москва',
+  needCustoms: false,
+  customsDutyPercent: 5,
+  insurancePercent: 0.5,
+};
+
 const useCalculator = () => {
-  const [step, setStep] = useState(1);
+  const [serviceType, setServiceType] = useState<ServiceType>('full');
+  const [step, setStep] = useState(0);
   const [settings, setSettings] = useState<GeneralSettings>(defaultSettings);
   const [products, setProducts] = useState<Product[]>([
     {
@@ -39,14 +58,14 @@ const useCalculator = () => {
       needMarking: false,
     },
   ]);
-
-  // 🔸 НОВОЕ СОСТОЯНИЕ ДЛЯ КОНТАКТОВ
   const [contact, setContact] = useState<ContactInfo>({
     name: '',
     company: '',
     phone: '',
     email: '',
   });
+  const [logisticsData, setLogisticsData] = useState<LogisticsData>(defaultLogisticsData);
+  const [logisticsResult, setLogisticsResult] = useState<LogisticsResult | null>(null);
 
   const addProduct = () => {
     const newProduct: Product = {
@@ -77,13 +96,26 @@ const useCalculator = () => {
     setContact(prev => ({ ...prev, [field]: value }));
   };
 
-  const calculate = (): CalculationResult | null => {
+  const updateLogisticsData = (field: keyof LogisticsData, value: any) => {
+    setLogisticsData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const calculateFull = (): CalculationResult | null => {
     const valid = products.some(p => p.price > 0 && p.quantity > 0);
     if (!valid) return null;
     return calculateTotalCost(products, settings);
   };
 
+  const calculateLogisticsCost = (): LogisticsResult | null => {
+    if (!logisticsData.weightGross || !logisticsData.invoiceAmount) return null;
+    const result = calculateLogistics(logisticsData, settings.exchangeRate);
+    setLogisticsResult(result);
+    return result;
+  };
+
   return {
+    serviceType,
+    setServiceType,
     step,
     setStep,
     settings,
@@ -92,9 +124,13 @@ const useCalculator = () => {
     addProduct,
     removeProduct,
     updateProduct,
-    contact,          // 🔸 новое
-    updateContact,    // 🔸 новое
-    calculate,
+    contact,
+    updateContact,
+    logisticsData,
+    updateLogisticsData,
+    logisticsResult,
+    calculateFull,
+    calculateLogisticsCost,
   };
 };
 
