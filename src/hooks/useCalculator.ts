@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Product, GeneralSettings, CalculationResult } from '../types';
+import { Product, GeneralSettings, CalculationResult, ContactInfo } from '../types';
 import { calculateTotalCost } from '../utils/calculations';
 
 const defaultSettings: GeneralSettings = {
@@ -40,6 +40,14 @@ const useCalculator = () => {
     },
   ]);
 
+  // 🔸 НОВОЕ СОСТОЯНИЕ ДЛЯ КОНТАКТОВ
+  const [contact, setContact] = useState<ContactInfo>({
+    name: '',
+    company: '',
+    phone: '',
+    email: '',
+  });
+
   const addProduct = () => {
     const newProduct: Product = {
       id: Date.now().toString() + Math.random(),
@@ -65,8 +73,11 @@ const useCalculator = () => {
     setProducts(products.map(p => (p.id === id ? { ...p, [field]: value } : p)));
   };
 
+  const updateContact = (field: keyof ContactInfo, value: string) => {
+    setContact(prev => ({ ...prev, [field]: value }));
+  };
+
   const calculate = (): CalculationResult | null => {
-    // Валидация: хотя бы один товар с ценой > 0
     const valid = products.some(p => p.price > 0 && p.quantity > 0);
     if (!valid) return null;
     return calculateTotalCost(products, settings);
@@ -81,6 +92,8 @@ const useCalculator = () => {
     addProduct,
     removeProduct,
     updateProduct,
+    contact,          // 🔸 новое
+    updateContact,    // 🔸 новое
     calculate,
   };
 };
