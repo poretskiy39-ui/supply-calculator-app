@@ -15,27 +15,28 @@ app.use(express.json());
 app.post('/api/contact', async (req, res) => {
   try {
     const data = req.body;
-    console.log('New application:', data);
+    console.log('Received application:', data.telegramUser?.username);
 
     const message = `
-📬 Новая заявка с расчётом!
-
-👤 Пользователь: ${data.telegramUser?.username || 'неизвестен'} (ID: ${data.telegramUser?.id || 'нет'})
-
-📦 Данные:
-• Товаров: ${data.products?.length || 0}
-• Итоговая стоимость: ${Math.round(data.result?.totalRub || 0).toLocaleString()} ₽
-• Себестоимость ед.: ${Math.round(data.result?.costPerItem || 0).toLocaleString()} ₽
-
-🕐 ${new Date().toLocaleString('ru-RU')}
+📬 Новая заявка!
+👤 Пользователь: ${data.telegramUser?.username || 'неизвестен'}
+💰 Итого: ${Math.round(data.result?.totalRub || 0)} ₽
     `;
-
     await bot.telegram.sendMessage(ADMIN_CHAT_ID, message);
     res.json({ success: true });
-  } catch (error) {
-    console.error(error);
+  } catch (err) {
+    console.error('Error:', err);
     res.status(500).json({ error: 'Internal error' });
   }
+});
+
+app.get('/health', (req, res) => res.send('OK'));
+
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled Rejection:', reason);
 });
 
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
