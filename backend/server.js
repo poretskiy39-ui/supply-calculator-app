@@ -9,13 +9,13 @@ const PORT = process.env.PORT || 3000;
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
-// Разрешаем CORS для всех источников (включая localhost и Vercel)
+// Разрешаем CORS для всех источников
 app.use(cors({
-  origin: '*', // для теста можно так, позже сузишь до конкретного домена
+  origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type']
 }));
-app.options('*', cors()); // обработка preflight запросов
+app.options('*', cors());
 
 app.use(express.json());
 
@@ -24,9 +24,13 @@ app.post('/api/contact', async (req, res) => {
     const data = req.body;
     console.log('Received application from:', data.telegramUser?.username);
 
+    // Формируем сообщение с контактными данными
     const message = `
 📬 Новая заявка!
-👤 Пользователь: ${data.telegramUser?.username || 'неизвестен'} (ID: ${data.telegramUser?.id || 'нет'})
+👤 Контакт: ${data.contact.name} (${data.contact.company || 'без компании'})
+📞 Телефон: ${data.contact.phone}
+✉️ Email: ${data.contact.email}
+🆔 Telegram: ${data.telegramUser?.username || 'нет'} (ID: ${data.telegramUser?.id || 'нет'})
 📦 Товаров: ${data.products?.length || 0}
 💰 Итого: ${Math.round(data.result?.totalRub || 0).toLocaleString()} ₽
 📊 Себестоимость ед.: ${Math.round(data.result?.costPerItem || 0).toLocaleString()} ₽
