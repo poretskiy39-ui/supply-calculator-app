@@ -18,9 +18,12 @@ const Title = styled.h2`
 
 const Section = styled.div`
   background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.lg};
   margin-bottom: ${theme.spacing.lg};
+  border: 1px solid ${theme.colors.border};
 `;
 
 const SectionTitle = styled.h3`
@@ -36,7 +39,6 @@ const Grid = styled.div`
   gap: ${theme.spacing.md};
 `;
 
-// Адаптивная сетка специально для трёх полей валют
 const CurrencyGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(3, 1fr);

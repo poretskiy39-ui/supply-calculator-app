@@ -6,10 +6,18 @@ import { theme } from '../styles/theme';
 
 const Card = styled.div`
   background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.lg};
   margin-bottom: ${theme.spacing.md};
   border: 1px solid ${theme.colors.border};
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  }
 `;
 
 const Header = styled.div`
@@ -40,8 +48,10 @@ const Title = styled.input`
 `;
 
 const RemoveButton = styled.button`
-  background: none;
-  border: none;
+  background: ${theme.colors.surfaceLight};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
+  border: 1px solid ${theme.colors.border};
   color: ${theme.colors.textMuted};
   font-size: 20px;
   line-height: 1;
@@ -53,11 +63,13 @@ const RemoveButton = styled.button`
   align-items: center;
   justify-content: center;
   border-radius: ${theme.borderRadius.sm};
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s;
 
   &:hover {
     background: ${theme.colors.surfaceLight};
     color: ${theme.colors.error};
+    border-color: ${theme.colors.error};
+    transform: scale(1.05);
   }
 `;
 

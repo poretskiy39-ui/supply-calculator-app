@@ -21,7 +21,9 @@ const Title = styled.h1`
 `;
 
 const MenuButton = styled.button`
-  background: transparent;
+  background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border: 1px solid ${theme.colors.border};
   color: ${theme.colors.text};
   padding: ${theme.spacing.sm} ${theme.spacing.md};
@@ -34,6 +36,8 @@ const MenuButton = styled.button`
   &:hover {
     border-color: ${theme.colors.accent};
     background: ${theme.colors.surfaceLight};
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
   }
 `;
 
@@ -49,7 +53,7 @@ const Decoration = styled.div`
 `;
 
 interface Props {
-  onMenuClick?: () => void; // колбэк для возврата в меню
+  onMenuClick?: () => void;
 }
 
 const Header: React.FC<Props> = ({ onMenuClick }) => {
@@ -67,4 +71,3 @@ const Header: React.FC<Props> = ({ onMenuClick }) => {
 };
 
 export default Header;
-

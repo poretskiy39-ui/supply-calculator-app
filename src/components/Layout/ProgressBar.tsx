@@ -5,6 +5,8 @@ import { theme } from '../../styles/theme';
 const Container = styled.div`
   padding: ${theme.spacing.lg} ${theme.spacing.lg} ${theme.spacing.md};
   background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-bottom: 1px solid ${theme.colors.border};
 `;
 

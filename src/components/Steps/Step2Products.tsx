@@ -26,7 +26,7 @@ const Step2Products: React.FC<Props> = ({ products, onAdd, onUpdate, onRemove })
   return (
     <Container>
       <Title>Товары</Title>
-      {products.map((product, index) => (
+      {products.map((product) => (
         <ProductCard
           key={product.id}
           product={product}

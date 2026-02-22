@@ -35,15 +35,18 @@ const Label = styled.label`
 const Input = styled.input`
   padding: ${theme.spacing.md} ${theme.spacing.lg};
   background: ${theme.colors.surfaceLight};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border: 1px solid ${theme.colors.border};
   border-radius: ${theme.borderRadius.md};
   color: ${theme.colors.text};
   font-size: ${theme.typography.body};
-  transition: border-color 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
 
   &:focus {
     outline: none;
     border-color: ${theme.colors.accent};
+    box-shadow: 0 0 0 3px rgba(198, 161, 91, 0.1);
   }
 `;
 
@@ -66,6 +69,8 @@ const Note = styled.div`
   margin-top: ${theme.spacing.md};
   padding: ${theme.spacing.md};
   background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.md};
   color: ${theme.colors.textSecondary};
   font-size: ${theme.typography.small};

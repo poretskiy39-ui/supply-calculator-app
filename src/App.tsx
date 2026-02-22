@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
+import { motion, AnimatePresence } from 'framer-motion';
 import { theme } from './styles/theme';
 import useCalculator from './hooks/useCalculator';
 import useTelegram from './hooks/useTelegram';
@@ -74,7 +75,6 @@ function App() {
 
   const [showSuccess, setShowSuccess] = useState(false);
 
-  // Массивы шагов для разных режимов
   const fullSteps = ['Общие', 'Товары', 'Логистика', 'Итог', 'Контакты'];
   const logisticsSteps = ['Груз', 'Расчёт', 'Контакты'];
 
@@ -93,10 +93,8 @@ function App() {
     setStep(1);
   };
 
-  // Возврат в главное меню
   const handleMenuClick = () => {
     setStep(0);
-    // При желании можно сбросить данные, но оставим как есть
   };
 
   const handleNext = () => {
@@ -277,7 +275,19 @@ function App() {
             steps={serviceType === 'full' ? fullSteps : logisticsSteps} 
           />
         )}
-        <Content>{renderStep()}</Content>
+        <Content>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={step + serviceType}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              transition={{ duration: 0.2 }}
+            >
+              {renderStep()}
+            </motion.div>
+          </AnimatePresence>
+        </Content>
         {step > 0 && step < 4 && serviceType === 'full' && (
           <NavWrap>
             {step > 1 && (

@@ -13,15 +13,19 @@ const Overlay = styled.div`
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  backdrop-filter: blur(5px);
 `;
 
 const Card = styled.div`
   background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.xl};
   max-width: 300px;
   text-align: center;
   border: 1px solid ${theme.colors.accent};
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 `;
 
 const Title = styled.h3`
@@ -32,6 +36,21 @@ const Title = styled.h3`
 const Text = styled.p`
   color: ${theme.colors.text};
   margin-bottom: ${theme.spacing.lg};
+`;
+
+const Spinner = styled.div`
+  border: 3px solid ${theme.colors.border};
+  border-top: 3px solid ${theme.colors.accent};
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto;
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
 `;
 
 interface Props {
@@ -49,6 +68,7 @@ const SuccessMessage: React.FC<Props> = ({ onClose }) => {
       <Card>
         <Title>Спасибо!</Title>
         <Text>Заявка отправлена. Менеджер свяжется с вами.</Text>
+        <Spinner />
       </Card>
     </Overlay>
   );

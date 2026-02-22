@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { LogisticsResult } from '../types';
 import { formatCurrency } from '../utils/formatters';
 import { theme } from '../styles/theme';
+import { PrimaryButton, SecondaryButton } from './UI';
 
 const Container = styled.div`
   padding: ${theme.spacing.lg};
@@ -15,11 +16,20 @@ const Title = styled.h2`
 `;
 
 const SummaryCard = styled.div`
-  background: linear-gradient(145deg, ${theme.colors.surface} 0%, ${theme.colors.surfaceLight} 100%);
+  background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.xl};
   margin-bottom: ${theme.spacing.lg};
   border: 1px solid ${theme.colors.accent}40;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(198, 161, 91, 0.2);
+  }
 `;
 
 const TotalRow = styled.div`
@@ -39,10 +49,17 @@ const TotalValue = styled.span`
   font-size: 28px;
   font-weight: 700;
   color: ${theme.colors.accent};
+  letter-spacing: -0.5px;
 `;
 
 const Breakdown = styled.div`
+  background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
+  border-radius: ${theme.borderRadius.lg};
+  padding: ${theme.spacing.lg};
   margin-top: ${theme.spacing.lg};
+  border: 1px solid ${theme.colors.border};
 `;
 
 const BreakdownItem = styled.div`
@@ -52,6 +69,10 @@ const BreakdownItem = styled.div`
   border-bottom: 1px solid ${theme.colors.border};
   color: ${theme.colors.textSecondary};
   font-size: ${theme.typography.small};
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
 const ItemName = styled.span``;
@@ -63,7 +84,9 @@ const ItemValue = styled.span`
 const Note = styled.div`
   margin-top: ${theme.spacing.md};
   padding: ${theme.spacing.md};
-  background: ${theme.colors.surface};
+  background: ${theme.colors.surfaceLight};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.md};
   color: ${theme.colors.textSecondary};
   font-style: italic;
@@ -76,28 +99,11 @@ const ButtonGroup = styled.div`
   margin-top: ${theme.spacing.xl};
 `;
 
-const BackBtn = styled.button`
+const BackBtn = styled(SecondaryButton)`
   flex: 1;
-  padding: ${theme.spacing.md};
-  background: transparent;
-  border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.borderRadius.md};
-  color: ${theme.colors.text};
-  font-weight: 600;
-  cursor: pointer;
-  &:hover { background: ${theme.colors.surfaceLight}; }
 `;
-
-const ContinueBtn = styled.button`
+const ContinueBtn = styled(PrimaryButton)`
   flex: 1;
-  padding: ${theme.spacing.md};
-  background: ${theme.colors.accent};
-  border: none;
-  border-radius: ${theme.borderRadius.md};
-  color: ${theme.colors.bg};
-  font-weight: 600;
-  cursor: pointer;
-  &:hover { background: ${theme.colors.accentHover}; }
 `;
 
 interface Props {

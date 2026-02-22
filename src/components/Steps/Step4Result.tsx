@@ -18,12 +18,20 @@ const Title = styled.h2`
 `;
 
 const SummaryCard = styled.div`
-  background: linear-gradient(145deg, ${theme.colors.surface} 0%, ${theme.colors.surfaceLight} 100%);
+  background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.xl};
   margin-bottom: ${theme.spacing.lg};
   border: 1px solid ${theme.colors.accent}40;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(198, 161, 91, 0.2);
+  }
 `;
 
 const TotalRow = styled.div`
@@ -57,7 +65,13 @@ const Breakdown = styled.div`
 `;
 
 const BreakdownGroup = styled.div`
+  background: ${theme.colors.surface};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
+  border-radius: ${theme.borderRadius.lg};
+  padding: ${theme.spacing.lg};
   margin-bottom: ${theme.spacing.lg};
+  border: 1px solid ${theme.colors.border};
 `;
 
 const GroupTitle = styled.h4`
@@ -76,6 +90,10 @@ const BreakdownItem = styled.div`
   border-bottom: 1px solid ${theme.colors.border};
   color: ${theme.colors.textSecondary};
   font-size: ${theme.typography.small};
+
+  &:last-child {
+    border-bottom: none;
+  }
 `;
 
 const ItemName = styled.span``;
@@ -105,6 +123,9 @@ const PdfBtn = styled(PrimaryButton)`
   background: ${theme.colors.surfaceLight};
   color: ${theme.colors.text};
   border: 1px solid ${theme.colors.border};
+  backdrop-filter: ${theme.blur};
+  -webkit-backdrop-filter: ${theme.blur};
+
   &:hover {
     background: ${theme.colors.surface};
   }
@@ -115,7 +136,7 @@ interface Props {
   products: Product[];
   settings: GeneralSettings;
   onBack: () => void;
-  onContinue: () => void; // теперь ведёт на шаг 5 (контакты)
+  onContinue: () => void;
 }
 
 const Step4Result: React.FC<Props> = ({ result, products, settings, onBack, onContinue }) => {
@@ -219,7 +240,7 @@ const Step4Result: React.FC<Props> = ({ result, products, settings, onBack, onCo
         >
           {({ loading }) => (
             <PdfBtn type="button" disabled={loading}>
-              {loading ? 'Генерация...' : 'Скачать PDF'}
+              {loading ? '⏳ Генерация...' : 'Скачать PDF'}
             </PdfBtn>
           )}
         </PDFDownloadLink>
