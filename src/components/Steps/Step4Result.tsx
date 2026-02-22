@@ -95,7 +95,7 @@ const BackBtn = styled(SecondaryButton)`
   flex: 1;
   min-width: 120px;
 `;
-const SubmitBtn = styled(PrimaryButton)`
+const ContactBtn = styled(PrimaryButton)`
   flex: 1;
   min-width: 120px;
 `;
@@ -115,7 +115,7 @@ interface Props {
   products: Product[];
   settings: GeneralSettings;
   onBack: () => void;
-  onContinue: () => void;
+  onContinue: () => void; // теперь ведёт на шаг 5 (контакты)
 }
 
 const Step4Result: React.FC<Props> = ({ result, products, settings, onBack, onContinue }) => {
@@ -223,7 +223,9 @@ const Step4Result: React.FC<Props> = ({ result, products, settings, onBack, onCo
             </PdfBtn>
           )}
         </PDFDownloadLink>
-        <SubmitBtn type="button" onClick={onContinue}>Отправить заявку</SubmitBtn>
+        <ContactBtn type="button" onClick={onContinue}>
+          Оставить контакты
+        </ContactBtn>
       </ButtonGroup>
     </Container>
   );
