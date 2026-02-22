@@ -2,10 +2,10 @@ import React from 'react';
 import styled, { keyframes } from 'styled-components';
 import { theme } from '../../styles/theme';
 
-const rotate = keyframes`
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-`;
+// const rotate = keyframes`
+//   from { transform: rotate(0deg); }
+//   to { transform: rotate(360deg); }
+// `;
 
 const Container = styled.div`
   padding: ${theme.spacing.xl};
@@ -24,11 +24,11 @@ const Container = styled.div`
 //   margin-bottom: ${theme.spacing.xl};
 // `;
 
-const Title = styled.h1`
-  font-size: 32px;
-  color: ${theme.colors.accent};
-  margin-bottom: ${theme.spacing.md};
-`;
+// const Title = styled.h1`
+//   font-size: 32px;
+//   color: ${theme.colors.accent};
+//   margin-bottom: ${theme.spacing.md};
+// `;
 
 const Subtitle = styled.p`
   font-size: ${theme.typography.body};

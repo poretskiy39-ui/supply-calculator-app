@@ -44,7 +44,7 @@ interface Props {
 }
 
 const PDFDocument: React.FC<Props> = ({ products, settings, result }) => {
-  const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
+  // const totalQuantity = products.reduce((sum, p) => sum + p.quantity, 0);
 
   return (
     <Document>
