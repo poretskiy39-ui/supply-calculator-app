@@ -1,54 +1,48 @@
 export interface Product {
   id: string;
   name: string;
-  price: number;               // в валюте инвойса
+  price: number;
   quantity: number;
-  weightNetto: number;          // кг
-  length: number;               // см
+  weightNetto: number;
+  length: number;
   width: number;
   height: number;
-  // Упаковка (опционально)
-  packingQtyPerBox?: number;    // шт в мастер-боксе
+  packingQtyPerBox?: number;
   packingBoxLength?: number;
   packingBoxWidth?: number;
   packingBoxHeight?: number;
-  packingBoxWeight?: number;    // кг брутто бокса
-  // Таможенные данные
+  packingBoxWeight?: number;
   hsCode?: string;
-  dutyPercent?: number;         // % пошлины
-  dutyEuro?: number;            // фикс евро (за товар)
-  needMarking?: boolean;        // Честный знак
-  markingPrice?: number;        // цена за ед.
+  dutyPercent?: number;
+  dutyEuro?: number;
+  needMarking?: boolean;
+  markingPrice?: number;
 }
 
 export interface GeneralSettings {
   invoiceCurrency: 'USD' | 'EUR' | 'CNY';
-  exchangeRate: number;          // курс USD → RUB
-  euroRate: number;              // курс EUR → RUB
-  cnyRate: number;               // курс CNY → RUB
+  exchangeRate: number;
+  euroRate: number;
+  cnyRate: number;
   incoterms: 'EXW' | 'FOB' | 'CIF' | 'DAP';
-  // Комиссии по умолчанию (можно редактировать)
   agentCommissionPercent: number;
   exporterCommissionPercent: number;
-  bankCommissionPercent: number;     // комиссия банка-агента
-  bankTransferFeePercent: number;    // КВ банка за перевод
-  bankControlFeePercent: number;     // за ведомость
-  // Фиксированные сборы
-  customsFee: number;                // таможенный сбор (руб)
-  declarationCost: number;           // подача декларации (руб)
-  terminalCost: number;              // терминал (руб)
-  lastMileCostPerKg: number;         // последняя миля (руб/кг)
-  // Логистика
+  bankCommissionPercent: number;
+  bankTransferFeePercent: number;
+  bankControlFeePercent: number;
+  customsFee: number;
+  declarationCost: number;
+  terminalCost: number;
+  lastMileCostPerKg: number;
   transportType: 'avia' | 'sea' | 'rail' | 'auto';
-  logisticsRate: number;              // $/кг
+  logisticsRate: number;
   insurancePercent: number;
-  // Агентское вознаграждение
   agentRewardPercent: number;
 }
 
 export interface CalculationResult {
   totalRub: number;
-  costPerItem: number;            // средняя себестоимость единицы
+  costPerItem: number;
   details: {
     invoiceRub: number;
     logisticsRub: number;
@@ -73,4 +67,12 @@ export interface ExchangeRates {
   eur: number;
   cny: number;
   date: string;
+}
+
+// 🔸 НОВЫЙ ИНТЕРФЕЙС
+export interface ContactInfo {
+  name: string;
+  company: string;
+  phone: string;
+  email: string;
 }
