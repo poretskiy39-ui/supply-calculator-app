@@ -14,14 +14,28 @@ const useTelegram = () => {
   useEffect(() => {
     if (tg) {
       tg.expand();
-      tg.setHeaderColor('#0F1A2F');
-      tg.setBackgroundColor('#0F1A2F');
+      // Проверяем версию для цветов (поддерживается с 6.2)
+      if (tg.version && parseFloat(tg.version) >= 6.2) {
+        tg.setHeaderColor('#0F1A2F');
+        tg.setBackgroundColor('#0F1A2F');
+      }
       tg.ready();
     }
   }, [tg]);
 
   const showAlert = (message: string) => {
-    if (tg) tg.showAlert(message);
+    if (tg) {
+      // showAlert доступен с версии 6.2, если нет – используем showPopup или fallback
+      if (tg.showAlert) {
+        tg.showAlert(message);
+      } else if (tg.showPopup) {
+        tg.showPopup({ title: 'Внимание', message });
+      } else {
+        alert(message);
+      }
+    } else {
+      alert(message);
+    }
   };
 
   const sendData = (data: any) => {
