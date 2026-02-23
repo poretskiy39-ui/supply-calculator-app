@@ -8,9 +8,9 @@ import type { GeneralSettings } from './types';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import ProgressBar from './components/Layout/ProgressBar';
-import Modal from './components/Modal'; // новый компонент для модального окна
-import Directory from './components/Directory'; // компонент справочника
-import { directorySections } from './data/directoryData'; // данные справочника
+import Modal from './components/Modal';
+import Directory from './components/Directory';
+import { directorySections } from './data/directoryData';
 import Step0Welcome from './components/Steps/Step0Welcome';
 import Step1General from './components/Steps/Step1General';
 import Step2Products from './components/Steps/Step2Products';
@@ -77,7 +77,7 @@ function App() {
   const { tg, showAlert, close } = useTelegram();
 
   const [showSuccess, setShowSuccess] = useState(false);
-  const [isDirectoryOpen, setIsDirectoryOpen] = useState(false); // состояние для модалки справочника
+  const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
 
   const fullSteps = ['Общие', 'Товары', 'Логистика', 'Итог', 'Контакты'];
   const logisticsSteps = ['Груз', 'Расчёт', 'Контакты'];
@@ -97,17 +97,9 @@ function App() {
     setStep(1);
   };
 
-  const handleMenuClick = () => {
-    setStep(0);
-  };
-
-  const handleDirectoryClick = () => {
-    setIsDirectoryOpen(true);
-  };
-
-  const handleCloseDirectory = () => {
-    setIsDirectoryOpen(false);
-  };
+  const handleMenuClick = () => setStep(0);
+  const handleDirectoryClick = () => setIsDirectoryOpen(true);
+  const handleCloseDirectory = () => setIsDirectoryOpen(false);
 
   const handleNext = () => {
     if (serviceType === 'full') {
@@ -142,7 +134,7 @@ function App() {
         return;
       }
       try {
-        const response = await fetch('https://supply-calculator-app-production.up.railway.app/api/contact', {
+        const response = await fetch('https://your-backend.up.railway.app/api/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -170,7 +162,7 @@ function App() {
         return;
       }
       try {
-        const response = await fetch('https://supply-calculator-app-production.up.railway.app/api/contact', {
+        const response = await fetch('https://your-backend.up.railway.app/api/contact', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -200,19 +192,16 @@ function App() {
 
     if (serviceType === 'full') {
       switch (step) {
-        case 1:
-          return <Step1General settings={settings} onUpdate={handleUpdateGeneral} />;
-        case 2:
-          return (
-            <Step2Products
-              products={products}
-              onAdd={addProduct}
-              onUpdate={updateProduct}
-              onRemove={removeProduct}
-            />
-          );
-        case 3:
-          return <Step3Logistics settings={settings} onUpdate={handleUpdateLogistics} />;
+        case 1: return <Step1General settings={settings} onUpdate={handleUpdateGeneral} />;
+        case 2: return (
+          <Step2Products
+            products={products}
+            onAdd={addProduct}
+            onUpdate={updateProduct}
+            onRemove={removeProduct}
+          />
+        );
+        case 3: return <Step3Logistics settings={settings} onUpdate={handleUpdateLogistics} />;
         case 4: {
           const result = calculateFull();
           return result ? (
@@ -223,33 +212,28 @@ function App() {
               onBack={handleBack}
               onContinue={() => setStep(5)}
             />
-          ) : (
-            <div>Ошибка расчёта</div>
-          );
+          ) : <div>Ошибка расчёта</div>;
         }
-        case 5:
-          return (
-            <Step5Contact
-              contact={contact}
-              onUpdate={updateContact}
-              onBack={() => setStep(4)}
-              onSubmit={() => handleSubmitContact('full')}
-            />
-          );
-        default:
-          return null;
+        case 5: return (
+          <Step5Contact
+            contact={contact}
+            onUpdate={updateContact}
+            onBack={() => setStep(4)}
+            onSubmit={() => handleSubmitContact('full')}
+          />
+        );
+        default: return null;
       }
     } else {
       switch (step) {
-        case 1:
-          return (
-            <StepLogisticsCargo
-              data={logisticsData}
-              onUpdate={updateLogisticsData}
-              onNext={handleCalculateLogistics}
-              onBack={() => setStep(0)}
-            />
-          );
+        case 1: return (
+          <StepLogisticsCargo
+            data={logisticsData}
+            onUpdate={updateLogisticsData}
+            onNext={handleCalculateLogistics}
+            onBack={() => setStep(0)}
+          />
+        );
         case 2: {
           const result = logisticsResult;
           return result ? (
@@ -258,21 +242,17 @@ function App() {
               onBack={() => setStep(1)}
               onContinue={() => setStep(3)}
             />
-          ) : (
-            <div>Ошибка расчёта</div>
-          );
+          ) : <div>Ошибка расчёта</div>;
         }
-        case 3:
-          return (
-            <Step5Contact
-              contact={contact}
-              onUpdate={updateContact}
-              onBack={() => setStep(2)}
-              onSubmit={() => handleSubmitContact('logistics')}
-            />
-          );
-        default:
-          return null;
+        case 3: return (
+          <Step5Contact
+            contact={contact}
+            onUpdate={updateContact}
+            onBack={() => setStep(2)}
+            onSubmit={() => handleSubmitContact('logistics')}
+          />
+        );
+        default: return null;
       }
     }
   };
@@ -282,9 +262,9 @@ function App() {
       <AppContainer>
         <Header onMenuClick={handleMenuClick} onDirectoryClick={handleDirectoryClick} />
         {step > 0 && (
-          <ProgressBar 
-            step={step} 
-            steps={serviceType === 'full' ? fullSteps : logisticsSteps} 
+          <ProgressBar
+            step={step}
+            steps={serviceType === 'full' ? fullSteps : logisticsSteps}
           />
         )}
         <Content>
@@ -302,21 +282,14 @@ function App() {
         </Content>
         {step > 0 && step < 4 && serviceType === 'full' && (
           <NavWrap>
-            {step > 1 && (
-              <NavButtonSecondary type="button" onClick={handleBack}>
-                Назад
-              </NavButtonSecondary>
-            )}
-            <NavButton type="button" onClick={handleNext}>
-              {step === 3 ? 'Рассчитать' : 'Далее'}
-            </NavButton>
+            {step > 1 && <NavButtonSecondary onClick={handleBack}>Назад</NavButtonSecondary>}
+            <NavButton onClick={handleNext}>{step === 3 ? 'Рассчитать' : 'Далее'}</NavButton>
           </NavWrap>
         )}
         {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
         <Footer />
       </AppContainer>
 
-      {/* Модальное окно справочника */}
       {isDirectoryOpen && (
         <Modal onClose={handleCloseDirectory}>
           <Directory sections={directorySections} />

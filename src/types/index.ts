@@ -1,4 +1,5 @@
 export type ServiceType = 'full' | 'logistics';
+export type TransportType = 'container' | 'ltl'; // новый тип
 
 export interface Product {
   id: string;
@@ -78,31 +79,41 @@ export interface ContactInfo {
   email: string;
 }
 
-// ========== НОВЫЕ ТИПЫ ДЛЯ РЕЖИМА "ЛОГИСТИКА" ==========
-
+// ===== Логистика =====
 export type ContainerType = '20DC' | '40HC';
 export type ChinaPort = 'Shanghai' | 'Ningbo' | 'Xingang (Tianjin)' | 'Qingdao' | 'Dalian';
 export type DestinationCity = 'Москва' | 'Санкт-Петербург';
 
 export interface LogisticsData {
+  transportType: TransportType;
   productName: string;
   hsCode: string;
-  invoiceAmount: number;         // стоимость товара по инвойсу (в валюте)
+  invoiceAmount: number;
   invoiceCurrency: 'USD' | 'EUR' | 'CNY';
-  weightGross: number;           // вес брутто груза (кг)
-  containerType: ContainerType;
-  portOfLoading: ChinaPort;
-  destinationCity: DestinationCity;
   needCustoms: boolean;
-  customsDutyPercent: number;    // ставка пошлины в % (если нужна таможня)
-  insurancePercent: number;      // страховка (% от инвойса)
+  customsDutyPercent: number;
+  insurancePercent: number;
+
+  // Для контейнера
+  containerType?: ContainerType;
+  portOfLoading?: ChinaPort;
+  destinationCity?: DestinationCity;
+  weightGross?: number;
+
+  // Для LTL
+  originCity?: string;           // город в Китае (свободный ввод)
+  ltlWeight?: number;
+  ltlVolume?: number;
+  ltlDestination?: DestinationCity;
+  ltlPickup?: boolean;
+  ltlDelivery?: boolean;
 }
 
 export interface LogisticsResult {
   totalRub: number;
   details: {
     oceanFreightRub: number;
-    railFreightRub: number;
+    railFreightRub: number;   // для LTL сюда идёт стоимость перевозки
     lastMileRub: number;
     customsValueRub: number;
     dutyRub: number;

@@ -18,18 +18,11 @@ const Title = styled.h2`
 const SummaryCard = styled.div`
   background: ${theme.colors.surface};
   backdrop-filter: ${theme.blur};
-  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.xl};
   margin-bottom: ${theme.spacing.lg};
   border: 1px solid ${theme.colors.accent}40;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 28px rgba(198, 161, 91, 0.2);
-  }
 `;
 
 const TotalRow = styled.div`
@@ -55,7 +48,6 @@ const TotalValue = styled.span`
 const Breakdown = styled.div`
   background: ${theme.colors.surface};
   backdrop-filter: ${theme.blur};
-  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.lg};
   margin-top: ${theme.spacing.lg};
@@ -86,11 +78,11 @@ const Note = styled.div`
   padding: ${theme.spacing.md};
   background: ${theme.colors.surfaceLight};
   backdrop-filter: ${theme.blur};
-  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.md};
   color: ${theme.colors.textSecondary};
   font-style: italic;
   border-left: 3px solid ${theme.colors.accent};
+  white-space: pre-line;
 `;
 
 const ButtonGroup = styled.div`
@@ -126,18 +118,24 @@ const StepLogisticsResult: React.FC<Props> = ({ result, onBack, onContinue }) =>
       </SummaryCard>
 
       <Breakdown>
-        <BreakdownItem>
-          <ItemName>Морской фрахт (порт Китая → порт ДВ)</ItemName>
-          <ItemValue>{formatCurrency(details.oceanFreightRub)}</ItemValue>
-        </BreakdownItem>
-        <BreakdownItem>
-          <ItemName>Ж/Д перевозка (порт ДВ → город назначения)</ItemName>
-          <ItemValue>{formatCurrency(details.railFreightRub)}</ItemValue>
-        </BreakdownItem>
-        <BreakdownItem>
-          <ItemName>Довоз до склада</ItemName>
-          <ItemValue>{formatCurrency(details.lastMileRub)}</ItemValue>
-        </BreakdownItem>
+        {details.oceanFreightRub > 0 && (
+          <BreakdownItem>
+            <ItemName>Морской фрахт (порт Китая → порт ДВ)</ItemName>
+            <ItemValue>{formatCurrency(details.oceanFreightRub)}</ItemValue>
+          </BreakdownItem>
+        )}
+        {details.railFreightRub > 0 && (
+          <BreakdownItem>
+            <ItemName>{details.oceanFreightRub > 0 ? 'Ж/Д перевозка по РФ' : 'Стоимость перевозки'}</ItemName>
+            <ItemValue>{formatCurrency(details.railFreightRub)}</ItemValue>
+          </BreakdownItem>
+        )}
+        {details.lastMileRub > 0 && (
+          <BreakdownItem>
+            <ItemName>Довоз до склада</ItemName>
+            <ItemValue>{formatCurrency(details.lastMileRub)}</ItemValue>
+          </BreakdownItem>
+        )}
         <BreakdownItem>
           <ItemName>Комиссия платежного агента</ItemName>
           <ItemValue>{formatCurrency(details.agentCommissionRub)}</ItemValue>

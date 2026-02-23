@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { 
   Product, GeneralSettings, CalculationResult, ContactInfo, 
-  ServiceType, LogisticsData, LogisticsResult 
+  ServiceType, LogisticsData, LogisticsResult, TransportType 
 } from '../types';
-import { calculateTotalCost } from '../utils/calculations/full'; // теперь путь правильный
-import { calculateLogistics } from '../utils/calculations/logistics';
+import { calculateTotalCost } from '../utils/calculations/full';
+import { calculateContainer, calculateLTL } from '../utils/calculations/logistics';
 
 const defaultSettings: GeneralSettings = {
   invoiceCurrency: 'USD',
@@ -28,17 +28,26 @@ const defaultSettings: GeneralSettings = {
 };
 
 const defaultLogisticsData: LogisticsData = {
+  transportType: 'container',
   productName: '',
   hsCode: '',
   invoiceAmount: 0,
   invoiceCurrency: 'USD',
-  weightGross: 0,
-  containerType: '20DC',
-  portOfLoading: 'Shanghai',
-  destinationCity: 'Москва',
   needCustoms: false,
   customsDutyPercent: 5,
   insurancePercent: 0.5,
+  // container
+  containerType: '20DC',
+  portOfLoading: 'Shanghai',
+  destinationCity: 'Москва',
+  weightGross: 0,
+  // ltl
+  originCity: '',
+  ltlWeight: 0,
+  ltlVolume: 0,
+  ltlDestination: 'Москва',
+  ltlPickup: false,
+  ltlDelivery: false,
 };
 
 const useCalculator = () => {
@@ -107,10 +116,17 @@ const useCalculator = () => {
   };
 
   const calculateLogisticsCost = (): LogisticsResult | null => {
-    if (!logisticsData.weightGross || !logisticsData.invoiceAmount) return null;
-    const result = calculateLogistics(logisticsData, settings.exchangeRate);
-    setLogisticsResult(result);
-    return result;
+    if (logisticsData.transportType === 'container') {
+      if (!logisticsData.weightGross || !logisticsData.invoiceAmount) return null;
+      const result = calculateContainer(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
+      setLogisticsResult(result);
+      return result;
+    } else {
+      if (!logisticsData.ltlWeight || !logisticsData.invoiceAmount) return null;
+      const result = calculateLTL(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
+      setLogisticsResult(result);
+      return result;
+    }
   };
 
   return {
