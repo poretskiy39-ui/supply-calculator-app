@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { 
   Product, GeneralSettings, CalculationResult, ContactInfo, 
-  ServiceType, LogisticsData, LogisticsResult, TransportType 
+  ServiceType, LogisticsData, LogisticsResult
 } from '../types';
 import { calculateTotalCost } from '../utils/calculations/full';
 import { calculateContainer, calculateLTL } from '../utils/calculations/logistics';
