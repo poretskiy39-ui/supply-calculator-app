@@ -6,6 +6,7 @@ import { formatCurrency } from '../../utils/formatters';
 import { theme } from '../../styles/theme';
 import { PrimaryButton, SecondaryButton } from '../UI';
 import PDFDocument from '../PDFDocument';
+import AnimatedNumber from '../UI/AnimatedNumber';
 
 const Container = styled.div`
   padding: ${theme.spacing.lg};
@@ -147,7 +148,9 @@ const Step4Result: React.FC<Props> = ({ result, products, settings, onBack, onCo
       <SummaryCard>
         <TotalRow>
           <TotalLabel>ИТОГО:</TotalLabel>
-          <TotalValue>{formatCurrency(result.totalRub)}</TotalValue>
+          <TotalValue>
+            <AnimatedNumber value={result.totalRub} /> ₽
+          </TotalValue>
         </TotalRow>
         <CostPerItem>Себестоимость ед.: {formatCurrency(result.costPerItem)}</CostPerItem>
       </SummaryCard>
