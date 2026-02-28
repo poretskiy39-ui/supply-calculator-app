@@ -15,7 +15,7 @@ import Step0Welcome from './components/Steps/Step0Welcome';
 import Step1General from './components/Steps/Step1General';
 import Step2Products from './components/Steps/Step2Products';
 import Step3Logistics from './components/Steps/Step3Logistics';
-import Step4Result from './components/Steps/Step4Result';
+import { Step4Result } from './components/Steps/Step4Result';
 import Step5Contact from './components/Steps/Step5Contact';
 import StepLogisticsCargo from './components/StepLogisticsCargo';
 import StepLogisticsResult from './components/StepLogisticsResult';
