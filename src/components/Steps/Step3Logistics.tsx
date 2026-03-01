@@ -17,8 +17,6 @@ const Title = styled.h2`
 
 const Section = styled.div`
   background: ${theme.colors.surface};
-  backdrop-filter: ${theme.blur};
-  -webkit-backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.lg};
   margin-bottom: ${theme.spacing.lg};
@@ -27,15 +25,19 @@ const Section = styled.div`
 
 const SectionTitle = styled.h3`
   font-size: ${theme.typography.body};
-  color: ${theme.colors.accent};
+  color: ${theme.colors.text};
   margin-bottom: ${theme.spacing.md};
-  font-weight: 600;
+  font-weight: 700;
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: ${theme.spacing.md};
+
+  @media (max-width: 760px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 interface Step3Props {
@@ -120,6 +122,33 @@ function Step3Logistics({ settings, onUpdate }: Step3Props) {
           min={0}
           step={0.1}
         />
+      </Section>
+
+      <Section>
+        <SectionTitle>Допвозможности из продаж</SectionTitle>
+        <Grid>
+          <CurrencyInput
+            label="Наценка экспортёра (%)"
+            value={settings.salesExporterMarkupPercent}
+            onChange={(v) => onUpdate({ salesExporterMarkupPercent: v })}
+            min={0}
+            step={0.01}
+          />
+          <CurrencyInput
+            label="Наценка плат. агента (%)"
+            value={settings.salesAgentMarkupPercent}
+            onChange={(v) => onUpdate({ salesAgentMarkupPercent: v })}
+            min={0}
+            step={0.01}
+          />
+          <CurrencyInput
+            label="Добавка к логистике (валюта инвойса)"
+            value={settings.salesLogisticsMarkupCurrency}
+            onChange={(v) => onUpdate({ salesLogisticsMarkupCurrency: v })}
+            min={0}
+            step={0.01}
+          />
+        </Grid>
       </Section>
     </Container>
   );

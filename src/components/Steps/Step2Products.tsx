@@ -10,9 +10,16 @@ const Container = styled.div`
 `;
 
 const Title = styled.h2`
+  font-family: var(--font-heading);
   font-size: ${theme.typography.h2};
   color: ${theme.colors.text};
-  margin-bottom: ${theme.spacing.lg};
+  margin: 0 0 ${theme.spacing.sm};
+`;
+
+const Subtitle = styled.p`
+  font-size: ${theme.typography.small};
+  color: ${theme.colors.textMuted};
+  margin: 0 0 ${theme.spacing.lg};
 `;
 
 interface Props {
@@ -26,6 +33,7 @@ const Step2Products: React.FC<Props> = ({ products, onAdd, onUpdate, onRemove })
   return (
     <Container>
       <Title>Товары</Title>
+      <Subtitle>Заполните состав партии для точного расчёта под ключ.</Subtitle>
       {products.map((product) => (
         <ProductCard
           key={product.id}

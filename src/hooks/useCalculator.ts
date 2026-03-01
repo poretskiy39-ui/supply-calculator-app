@@ -1,7 +1,12 @@
 import { useState } from 'react';
-import { 
-  Product, GeneralSettings, CalculationResult, ContactInfo, 
-  ServiceType, LogisticsData, LogisticsResult
+import {
+  Product,
+  GeneralSettings,
+  CalculationResult,
+  ContactInfo,
+  ServiceType,
+  LogisticsData,
+  LogisticsResult,
 } from '../types';
 import { calculateTotalCost } from '../utils/calculations/full';
 import { calculateContainer, calculateLTL } from '../utils/calculations/logistics';
@@ -12,12 +17,12 @@ const defaultSettings: GeneralSettings = {
   euroRate: 90,
   cnyRate: 11.3,
   incoterms: 'EXW',
-  agentCommissionPercent: 1.99,
-  exporterCommissionPercent: 0.3,
-  bankCommissionPercent: 0.4,
-  bankTransferFeePercent: 0.15,
-  bankControlFeePercent: 0.5,
-  customsFee: 3000,
+  agentCommissionPercent: 0.3,
+  exporterCommissionPercent: 1.99,
+  bankCommissionPercent: 1.99,
+  bankTransferFeePercent: 0.4,
+  bankControlFeePercent: 0.15,
+  customsFee: 0,
   declarationCost: 30500,
   terminalCost: 5000,
   lastMileCostPerKg: 50,
@@ -25,6 +30,9 @@ const defaultSettings: GeneralSettings = {
   logisticsRate: 2.5,
   insurancePercent: 0.5,
   agentRewardPercent: 10,
+  salesExporterMarkupPercent: 1.99,
+  salesAgentMarkupPercent: 0,
+  salesLogisticsMarkupCurrency: 0,
 };
 
 const defaultLogisticsData: LogisticsData = {
@@ -36,12 +44,10 @@ const defaultLogisticsData: LogisticsData = {
   needCustoms: false,
   customsDutyPercent: 5,
   insurancePercent: 0.5,
-  // container
   containerType: '20DC',
   portOfLoading: 'Shanghai',
   destinationCity: 'Москва',
   weightGross: 0,
-  // ltl
   originCity: '',
   ltlWeight: 0,
   ltlVolume: 0,
@@ -121,12 +127,12 @@ const useCalculator = () => {
       const result = calculateContainer(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
       setLogisticsResult(result);
       return result;
-    } else {
-      if (!logisticsData.ltlWeight || !logisticsData.invoiceAmount) return null;
-      const result = calculateLTL(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
-      setLogisticsResult(result);
-      return result;
     }
+
+    if (!logisticsData.ltlWeight || !logisticsData.invoiceAmount) return null;
+    const result = calculateLTL(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
+    setLogisticsResult(result);
+    return result;
   };
 
   return {

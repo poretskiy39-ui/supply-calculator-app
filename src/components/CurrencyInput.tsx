@@ -10,8 +10,10 @@ const InputWrapper = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: ${theme.typography.small};
-  color: ${theme.colors.textSecondary};
+  font-size: 8px;
+  color: ${theme.colors.textMuted};
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 `;
 
 const StyledInput = styled.input`
@@ -19,21 +21,22 @@ const StyledInput = styled.input`
   max-width: 100%;
   box-sizing: border-box;
   padding: ${theme.spacing.md} ${theme.spacing.lg};
-  background: ${theme.colors.surfaceLight};
+  background: ${theme.colors.surface};
   border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.borderRadius.md};
+  border-radius: 11px;
   color: ${theme.colors.text};
   font-size: ${theme.typography.body};
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 
   &:hover {
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: ${theme.colors.accent40};
+    background: ${theme.colors.surfaceLight};
   }
 
   &:focus {
     outline: none;
     border-color: ${theme.colors.accent};
-    box-shadow: 0 0 0 3px ${theme.colors.accent}30;
+    box-shadow: 0 0 0 2px ${theme.colors.accent20};
   }
 
   &::placeholder {

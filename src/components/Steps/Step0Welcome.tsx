@@ -2,63 +2,70 @@ import React from 'react';
 import styled from 'styled-components';
 import { theme } from '../../styles/theme';
 
-// const rotate = keyframes`
-//   from { transform: rotate(0deg); }
-//   to { transform: rotate(360deg); }
-// `;
-
 const Container = styled.div`
-  padding: ${theme.spacing.xl};
-  text-align: center;
-  min-height: 60vh;
+  padding: ${theme.spacing.xl} ${theme.spacing.lg};
+  min-height: 62vh;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
 `;
-// Закоментил лого, пока не придумаю где найти качество лучше
-// const Logo = styled.img`
-//   width: 120px;
-//   height: 120px;
-//   animation: ${rotate} 10s linear infinite;
-//   margin-bottom: ${theme.spacing.xl};
-// `;
 
-// const Title = styled.h1`
-//   font-size: 32px;
-//   color: ${theme.colors.accent};
-//   margin-bottom: ${theme.spacing.md};
-// `;
+const Greeting = styled.p`
+  font-size: 8px;
+  color: ${theme.colors.textMuted};
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+`;
+
+const Title = styled.h1`
+  font-family: var(--font-heading);
+  font-size: 31px;
+  line-height: 1.06;
+  margin: 0 0 ${theme.spacing.md};
+  max-width: 340px;
+`;
+
+const Accent = styled.span`
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-weight: 300;
+  color: ${theme.colors.textMuted};
+`;
 
 const Subtitle = styled.p`
-  font-size: ${theme.typography.body};
+  font-size: ${theme.typography.small};
   color: ${theme.colors.textSecondary};
-  margin-bottom: ${theme.spacing.xl};
-  max-width: 300px;
+  margin: 0 0 ${theme.spacing.xl};
+  max-width: 340px;
+  line-height: 1.58;
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: ${theme.spacing.md};
+  gap: ${theme.spacing.sm};
   width: 100%;
-  max-width: 300px;
 `;
 
 const ServiceButton = styled.button`
-  padding: ${theme.spacing.lg};
+  width: 100%;
+  padding: 15px;
   background: ${theme.colors.surface};
   border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.borderRadius.lg};
+  border-radius: 12px;
   color: ${theme.colors.text};
-  font-size: ${theme.typography.body};
+  font-size: ${theme.typography.small};
   font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
   transition: all 0.2s;
 
   &:hover {
-    border-color: ${theme.colors.accent};
+    border-color: ${theme.colors.accent40};
     background: ${theme.colors.surfaceLight};
+    transform: translateY(-1px);
   }
 `;
 
@@ -69,16 +76,18 @@ interface Props {
 const Step0Welcome: React.FC<Props> = ({ onSelectService }) => {
   return (
     <Container>
-    {/* <Logo src="/logo.png" alt="Movers Group" /> */}
-      
-      <Subtitle>В вашем распоряжение мощный и быстрый инструмент для расчетов</Subtitle>
+      <Greeting>{'// Добро пожаловать'}</Greeting>
+      <Title>
+        Ваши поставки.
+        <br />
+        <Accent>Под контролем.</Accent>
+      </Title>
+      <Subtitle>
+        Расчёт себестоимости, логистики и таможенных платежей в одном инструменте. Строго, быстро, без лишнего.
+      </Subtitle>
       <ButtonGroup>
-        <ServiceButton onClick={() => onSelectService('full')}>
-          Поставка под ключ
-        </ServiceButton>
-        <ServiceButton onClick={() => onSelectService('logistics')}>
-          Только логистика
-        </ServiceButton>
+        <ServiceButton onClick={() => onSelectService('full')}>Поставка под ключ</ServiceButton>
+        <ServiceButton onClick={() => onSelectService('logistics')}>Только логистика</ServiceButton>
       </ButtonGroup>
     </Container>
   );

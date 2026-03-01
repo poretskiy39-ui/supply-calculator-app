@@ -4,12 +4,8 @@ import { theme } from '../styles/theme';
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0,0,0,0.7);
-  backdrop-filter: blur(5px);
+  inset: 0;
+  background: rgba(0, 0, 0, 0.36);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -18,15 +14,15 @@ const Overlay = styled.div`
 
 const ModalContainer = styled.div`
   background: ${theme.colors.surface};
-  backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
-  max-width: 800px;
-  width: 90%;
+  max-width: 820px;
+  width: min(92vw, 820px);
   max-height: 90vh;
   overflow-y: auto;
   padding: ${theme.spacing.xl};
   position: relative;
   border: 1px solid ${theme.colors.border};
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
 `;
 
 const CloseButton = styled.button`
@@ -36,13 +32,13 @@ const CloseButton = styled.button`
   background: ${theme.colors.surfaceLight};
   border: 1px solid ${theme.colors.border};
   color: ${theme.colors.text};
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 20px;
+  font-size: 18px;
   cursor: pointer;
   transition: all 0.2s;
 
@@ -62,6 +58,7 @@ const Modal: React.FC<Props> = ({ onClose, children }) => {
     const handleEsc = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
+
     window.addEventListener('keydown', handleEsc);
     return () => window.removeEventListener('keydown', handleEsc);
   }, [onClose]);

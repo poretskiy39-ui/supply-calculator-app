@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
-import { theme } from './styles/theme';
+import { theme, ThemeMode } from './styles/theme';
 import useCalculator from './hooks/useCalculator';
 import useTelegram from './hooks/useTelegram';
 import type { GeneralSettings } from './types';
@@ -22,8 +22,20 @@ import StepLogisticsResult from './components/StepLogisticsResult';
 import SuccessMessage from './components/SuccessMessage';
 import { PrimaryButton, SecondaryButton } from './components/UI';
 
+const Shell = styled.div`
+  min-height: 100vh;
+  background: var(--color-bg);
+
+  @media (min-width: 500px) {
+    background: var(--color-bg);
+    display: flex;
+    justify-content: center;
+    padding: 24px;
+  }
+`;
+
 const AppContainer = styled.div`
-  max-width: 560px;
+  max-width: 420px;
   width: 100%;
   margin: 0 auto;
   background: ${theme.colors.bg};
@@ -31,6 +43,15 @@ const AppContainer = styled.div`
   display: flex;
   flex-direction: column;
   color: ${theme.colors.text};
+  box-shadow: 0 0 80px rgba(0, 0, 0, 0.08);
+
+  @media (min-width: 500px) {
+    border-radius: 44px;
+    min-height: calc(100vh - 48px);
+    overflow: hidden;
+    border: 1px solid ${theme.colors.border};
+    box-shadow: 0 32px 80px rgba(0, 0, 0, 0.14);
+  }
 `;
 
 const Content = styled.main`
@@ -39,8 +60,7 @@ const Content = styled.main`
 `;
 
 const NavWrap = styled.div`
-  padding: ${theme.spacing.lg};
-  padding-bottom: calc(${theme.spacing.lg} + env(safe-area-inset-bottom, 0));
+  padding: 8px ${theme.spacing.lg} 18px;
   display: flex;
   gap: ${theme.spacing.md};
   background: ${theme.colors.bg};
@@ -50,6 +70,7 @@ const NavWrap = styled.div`
 const NavButton = styled(PrimaryButton)`
   flex: 1;
 `;
+
 const NavButtonSecondary = styled(SecondaryButton)`
   flex: 1;
 `;
@@ -78,9 +99,10 @@ function App() {
 
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
+  const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
 
   const fullSteps = ['Общие', 'Товары', 'Логистика', 'Итог', 'Контакты'];
-  const logisticsSteps = ['Груз', 'Расчёт', 'Контакты'];
+  const logisticsSteps = ['Груз', 'Расчет', 'Контакты'];
 
   const handleUpdateGeneral = useCallback(
     (newSettings: Partial<GeneralSettings>) => setSettings(prev => ({ ...prev, ...newSettings })),
@@ -100,6 +122,14 @@ function App() {
   const handleMenuClick = () => setStep(0);
   const handleDirectoryClick = () => setIsDirectoryOpen(true);
   const handleCloseDirectory = () => setIsDirectoryOpen(false);
+  const handleThemeToggle = () => setThemeMode(prev => (prev === 'dark' ? 'swiss-light' : 'dark'));
+
+  useEffect(() => {
+    document.body.setAttribute('data-theme', themeMode);
+    return () => {
+      document.body.removeAttribute('data-theme');
+    };
+  }, [themeMode]);
 
   const handleNext = () => {
     if (serviceType === 'full') {
@@ -130,7 +160,7 @@ function App() {
     if (type === 'full') {
       const result = calculateFull();
       if (!result) {
-        showAlert('Ошибка расчёта. Проверьте данные.');
+        showAlert('Ошибка расчета. Проверьте данные.');
         return;
       }
       try {
@@ -158,7 +188,7 @@ function App() {
     } else {
       const result = logisticsResult;
       if (!result) {
-        showAlert('Сначала выполните расчёт');
+        showAlert('Сначала выполните расчет');
         return;
       }
       try {
@@ -186,22 +216,23 @@ function App() {
   };
 
   const renderStep = () => {
-    if (step === 0) {
-      return <Step0Welcome onSelectService={handleSelectService} />;
-    }
+    if (step === 0) return <Step0Welcome onSelectService={handleSelectService} />;
 
     if (serviceType === 'full') {
       switch (step) {
-        case 1: return <Step1General settings={settings} onUpdate={handleUpdateGeneral} />;
-        case 2: return (
-          <Step2Products
-            products={products}
-            onAdd={addProduct}
-            onUpdate={updateProduct}
-            onRemove={removeProduct}
-          />
-        );
-        case 3: return <Step3Logistics settings={settings} onUpdate={handleUpdateLogistics} />;
+        case 1:
+          return <Step1General settings={settings} onUpdate={handleUpdateGeneral} />;
+        case 2:
+          return (
+            <Step2Products
+              products={products}
+              onAdd={addProduct}
+              onUpdate={updateProduct}
+              onRemove={removeProduct}
+            />
+          );
+        case 3:
+          return <Step3Logistics settings={settings} onUpdate={handleUpdateLogistics} />;
         case 4: {
           const result = calculateFull();
           return result ? (
@@ -212,21 +243,27 @@ function App() {
               onBack={handleBack}
               onContinue={() => setStep(5)}
             />
-          ) : <div>Ошибка расчёта</div>;
+          ) : (
+            <div>Ошибка расчета</div>
+          );
         }
-        case 5: return (
-          <Step5Contact
-            contact={contact}
-            onUpdate={updateContact}
-            onBack={() => setStep(4)}
-            onSubmit={() => handleSubmitContact('full')}
-          />
-        );
-        default: return null;
+        case 5:
+          return (
+            <Step5Contact
+              contact={contact}
+              onUpdate={updateContact}
+              onBack={() => setStep(4)}
+              onSubmit={() => handleSubmitContact('full')}
+            />
+          );
+        default:
+          return null;
       }
-    } else {
-      switch (step) {
-        case 1: return (
+    }
+
+    switch (step) {
+      case 1:
+        return (
           <StepLogisticsCargo
             data={logisticsData}
             onUpdate={updateLogisticsData}
@@ -234,17 +271,18 @@ function App() {
             onBack={() => setStep(0)}
           />
         );
-        case 2: {
-          const result = logisticsResult;
-          return result ? (
-            <StepLogisticsResult
-              result={result}
-              onBack={() => setStep(1)}
-              onContinue={() => setStep(3)}
-            />
-          ) : <div>Ошибка расчёта</div>;
-        }
-        case 3: return (
+      case 2:
+        return logisticsResult ? (
+          <StepLogisticsResult
+            result={logisticsResult}
+            onBack={() => setStep(1)}
+            onContinue={() => setStep(3)}
+          />
+        ) : (
+          <div>Ошибка расчета</div>
+        );
+      case 3:
+        return (
           <Step5Contact
             contact={contact}
             onUpdate={updateContact}
@@ -252,43 +290,47 @@ function App() {
             onSubmit={() => handleSubmitContact('logistics')}
           />
         );
-        default: return null;
-      }
+      default:
+        return null;
     }
   };
 
   return (
     <ThemeProvider theme={theme}>
-      <AppContainer>
-        <Header onMenuClick={handleMenuClick} onDirectoryClick={handleDirectoryClick} />
-        {step > 0 && (
-          <ProgressBar
-            step={step}
-            steps={serviceType === 'full' ? fullSteps : logisticsSteps}
+      <Shell>
+        <AppContainer>
+          <Header
+            onMenuClick={handleMenuClick}
+            onDirectoryClick={handleDirectoryClick}
+            onThemeToggle={handleThemeToggle}
+            themeMode={themeMode}
           />
-        )}
-        <Content>
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={step + serviceType}
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              transition={{ duration: 0.2 }}
-            >
-              {renderStep()}
-            </motion.div>
-          </AnimatePresence>
-        </Content>
-        {step > 0 && step < 4 && serviceType === 'full' && (
-          <NavWrap>
-            {step > 1 && <NavButtonSecondary onClick={handleBack}>Назад</NavButtonSecondary>}
-            <NavButton onClick={handleNext}>{step === 3 ? 'Рассчитать' : 'Далее'}</NavButton>
-          </NavWrap>
-        )}
-        {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
-        <Footer />
-      </AppContainer>
+          {step > 0 && (
+            <ProgressBar step={step} steps={serviceType === 'full' ? fullSteps : logisticsSteps} />
+          )}
+          <Content>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={step + serviceType}
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.24, ease: 'easeInOut' }}
+              >
+                {renderStep()}
+              </motion.div>
+            </AnimatePresence>
+          </Content>
+          {step > 0 && step < 4 && serviceType === 'full' && (
+            <NavWrap>
+              {step > 1 && <NavButtonSecondary onClick={handleBack}>Назад</NavButtonSecondary>}
+              <NavButton onClick={handleNext}>{step === 3 ? 'Рассчитать' : 'Далее'}</NavButton>
+            </NavWrap>
+          )}
+          {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
+          <Footer />
+        </AppContainer>
+      </Shell>
 
       {isDirectoryOpen && (
         <Modal onClose={handleCloseDirectory}>

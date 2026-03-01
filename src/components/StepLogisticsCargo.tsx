@@ -10,9 +10,10 @@ const Container = styled.div`
 `;
 
 const Title = styled.h2`
+  font-family: var(--font-heading);
   font-size: ${theme.typography.h2};
   color: ${theme.colors.text};
-  margin-bottom: ${theme.spacing.lg};
+  margin: 0 0 ${theme.spacing.lg};
 `;
 
 const Form = styled.div`
@@ -28,18 +29,19 @@ const Field = styled.div`
 `;
 
 const Label = styled.label`
-  font-size: ${theme.typography.small};
-  color: ${theme.colors.textSecondary};
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: ${theme.colors.textMuted};
 `;
 
 const Input = styled.input`
   padding: ${theme.spacing.md} ${theme.spacing.lg};
-  background: ${theme.colors.surfaceLight};
+  background: ${theme.colors.surface};
   border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.borderRadius.md};
+  border-radius: 11px;
   color: ${theme.colors.text};
   font-size: ${theme.typography.body};
-  transition: border-color 0.2s;
 
   &:focus {
     outline: none;
@@ -51,6 +53,10 @@ const Grid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: ${theme.spacing.md};
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const CheckboxLabel = styled.label`
@@ -58,18 +64,18 @@ const CheckboxLabel = styled.label`
   align-items: center;
   gap: ${theme.spacing.sm};
   color: ${theme.colors.text};
-  font-size: ${theme.typography.body};
+  font-size: ${theme.typography.small};
   cursor: pointer;
 `;
 
 const Note = styled.div`
-  margin-top: ${theme.spacing.md};
+  margin-top: ${theme.spacing.sm};
   padding: ${theme.spacing.md};
-  background: ${theme.colors.surface};
-  border-radius: ${theme.borderRadius.md};
+  background: ${theme.colors.surfaceLight};
+  border-radius: 12px;
   color: ${theme.colors.textSecondary};
   font-size: ${theme.typography.small};
-  border-left: 3px solid ${theme.colors.accent};
+  border: 1px solid ${theme.colors.border};
 `;
 
 const ToggleGroup = styled.div`
@@ -81,17 +87,15 @@ const ToggleGroup = styled.div`
 const ToggleButton = styled.button<{ active: boolean }>`
   flex: 1;
   padding: ${theme.spacing.md};
-  background: ${props => props.active ? theme.colors.accent : theme.colors.surface};
-  color: ${props => props.active ? theme.colors.bg : theme.colors.text};
+  background: ${({ active }) => (active ? theme.colors.text : theme.colors.surface)};
+  color: ${({ active }) => (active ? theme.colors.bg : theme.colors.text)};
   border: 1px solid ${theme.colors.border};
-  border-radius: ${theme.borderRadius.md};
+  border-radius: 10px;
   font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: ${theme.typography.small};
   cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${props => props.active ? theme.colors.accentHover : theme.colors.surfaceLight};
-  }
 `;
 
 interface Props {
@@ -102,9 +106,12 @@ interface Props {
 }
 
 const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
-  const isValid = data.productName && data.hsCode && data.invoiceAmount > 0 && (
-    (data.transportType === 'container' && data.weightGross && data.weightGross > 0) ||
-    (data.transportType === 'ltl' && data.ltlWeight && data.ltlWeight > 0)
+  const isValid = Boolean(
+    data.productName &&
+      data.hsCode &&
+      data.invoiceAmount > 0 &&
+      ((data.transportType === 'container' && data.weightGross && data.weightGross > 0) ||
+        (data.transportType === 'ltl' && data.ltlWeight && data.ltlWeight > 0))
   );
 
   const chinaPorts: ChinaPort[] = ['Shanghai', 'Ningbo', 'Xingang (Tianjin)', 'Qingdao', 'Dalian'];
@@ -116,17 +123,11 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
       <Title>Параметры груза (FOB)</Title>
 
       <ToggleGroup>
-        <ToggleButton
-          active={data.transportType === 'container'}
-          onClick={() => onUpdate('transportType', 'container')}
-        >
-          Контейнерная перевозка
+        <ToggleButton active={data.transportType === 'container'} onClick={() => onUpdate('transportType', 'container')}>
+          Контейнер
         </ToggleButton>
-        <ToggleButton
-          active={data.transportType === 'ltl'}
-          onClick={() => onUpdate('transportType', 'ltl')}
-        >
-          Сборное авто (LTL)
+        <ToggleButton active={data.transportType === 'ltl'} onClick={() => onUpdate('transportType', 'ltl')}>
+          Сборное авто
         </ToggleButton>
       </ToggleGroup>
 
@@ -137,7 +138,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
             type="text"
             value={data.productName}
             onChange={e => onUpdate('productName', e.target.value)}
-            placeholder="Например: Обувь кожаная"
+            placeholder="Например: обувь кожаная"
           />
         </Field>
 
@@ -153,7 +154,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
 
         <Grid>
           <CurrencyInput
-            label="Стоимость товара по инвойсу *"
+            label="Стоимость по инвойсу *"
             value={data.invoiceAmount}
             onChange={v => onUpdate('invoiceAmount', v)}
             min={0}
@@ -161,10 +162,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
           />
           <Field>
             <Label>Валюта инвойса</Label>
-            <SelectInput
-              value={data.invoiceCurrency}
-              onChange={e => onUpdate('invoiceCurrency', e.target.value)}
-            >
+            <SelectInput value={data.invoiceCurrency} onChange={e => onUpdate('invoiceCurrency', e.target.value)}>
               <option value="USD">USD</option>
               <option value="EUR">EUR</option>
               <option value="CNY">CNY</option>
@@ -173,7 +171,6 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
         </Grid>
 
         {data.transportType === 'container' ? (
-          // Поля для контейнера
           <>
             <Grid>
               <CurrencyInput
@@ -185,42 +182,44 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
               />
               <Field>
                 <Label>Тип контейнера</Label>
-                <SelectInput
-                  value={data.containerType}
-                  onChange={e => onUpdate('containerType', e.target.value)}
-                >
-                  {containerTypes.map(type => <option key={type} value={type}>{type}</option>)}
+                <SelectInput value={data.containerType} onChange={e => onUpdate('containerType', e.target.value)}>
+                  {containerTypes.map(type => (
+                    <option key={type} value={type}>
+                      {type}
+                    </option>
+                  ))}
                 </SelectInput>
               </Field>
             </Grid>
 
             <Grid>
               <Field>
-                <Label>Порт погрузки в Китае</Label>
-                <SelectInput
-                  value={data.portOfLoading}
-                  onChange={e => onUpdate('portOfLoading', e.target.value as ChinaPort)}
-                >
-                  {chinaPorts.map(port => <option key={port} value={port}>{port}</option>)}
+                <Label>Порт погрузки</Label>
+                <SelectInput value={data.portOfLoading} onChange={e => onUpdate('portOfLoading', e.target.value as ChinaPort)}>
+                  {chinaPorts.map(port => (
+                    <option key={port} value={port}>
+                      {port}
+                    </option>
+                  ))}
                 </SelectInput>
               </Field>
               <Field>
-                <Label>Город назначения в РФ</Label>
-                <SelectInput
-                  value={data.destinationCity}
-                  onChange={e => onUpdate('destinationCity', e.target.value as DestinationCity)}
-                >
-                  {cities.map(city => <option key={city} value={city}>{city}</option>)}
+                <Label>Город назначения</Label>
+                <SelectInput value={data.destinationCity} onChange={e => onUpdate('destinationCity', e.target.value as DestinationCity)}>
+                  {cities.map(city => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
                 </SelectInput>
               </Field>
             </Grid>
           </>
         ) : (
-          // Поля для сборного авто
           <>
             <Grid>
               <Field>
-                <Label>Город отправления в Китае</Label>
+                <Label>Город отправления (Китай)</Label>
                 <Input
                   type="text"
                   value={data.originCity || ''}
@@ -230,11 +229,12 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
               </Field>
               <Field>
                 <Label>Город назначения *</Label>
-                <SelectInput
-                  value={data.ltlDestination}
-                  onChange={e => onUpdate('ltlDestination', e.target.value as DestinationCity)}
-                >
-                  {cities.map(city => <option key={city} value={city}>{city}</option>)}
+                <SelectInput value={data.ltlDestination} onChange={e => onUpdate('ltlDestination', e.target.value as DestinationCity)}>
+                  {cities.map(city => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
                 </SelectInput>
               </Field>
             </Grid>
@@ -248,7 +248,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
                 step={0.1}
               />
               <CurrencyInput
-                label="Объём (м³)"
+                label="Объем (м3)"
                 value={data.ltlVolume || 0}
                 onChange={v => onUpdate('ltlVolume', v)}
                 min={0}
@@ -258,19 +258,11 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
 
             <Grid>
               <CheckboxLabel>
-                <input
-                  type="checkbox"
-                  checked={data.ltlPickup || false}
-                  onChange={e => onUpdate('ltlPickup', e.target.checked)}
-                />
+                <input type="checkbox" checked={data.ltlPickup || false} onChange={e => onUpdate('ltlPickup', e.target.checked)} />
                 Забор груза в Китае
               </CheckboxLabel>
               <CheckboxLabel>
-                <input
-                  type="checkbox"
-                  checked={data.ltlDelivery || false}
-                  onChange={e => onUpdate('ltlDelivery', e.target.checked)}
-                />
+                <input type="checkbox" checked={data.ltlDelivery || false} onChange={e => onUpdate('ltlDelivery', e.target.checked)} />
                 Доставка по городу назначения
               </CheckboxLabel>
             </Grid>
@@ -279,11 +271,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
 
         <Field>
           <CheckboxLabel>
-            <input
-              type="checkbox"
-              checked={data.needCustoms}
-              onChange={e => onUpdate('needCustoms', e.target.checked)}
-            />
+            <input type="checkbox" checked={data.needCustoms} onChange={e => onUpdate('needCustoms', e.target.checked)} />
             Нужно таможенное оформление
           </CheckboxLabel>
         </Field>
@@ -309,21 +297,24 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
 
         {data.transportType === 'container' && (
           <Note>
-            ⓘ В ставку входит: морской фрахт до порта Дальнего Востока, погрузка/выгрузка,
-            затем ж/д перевозка и довоз до склада клиента.
+            В ставку включены морской фрахт до Дальнего Востока, перегрузка, далее ЖД и довоз до склада.
           </Note>
         )}
 
         {data.transportType === 'ltl' && (
           <Note>
-            ⓘ Стоимость рассчитана по тарифу $2.8/кг (минимальная оплата $300).
-            При превышении объёмного веса (250 кг/м³) расчёт идёт по большему значению.
+            Стоимость считается по тарифу 2.8 USD/кг (минимум 300 USD). Если объемный вес выше фактического,
+            используется объемный вес 250 кг/м3.
           </Note>
         )}
 
         <div style={{ display: 'flex', gap: theme.spacing.md, marginTop: theme.spacing.xl }}>
-          <SecondaryButton onClick={onBack} style={{ flex: 1 }}>Назад</SecondaryButton>
-          <PrimaryButton onClick={onNext} disabled={!isValid} style={{ flex: 1 }}>Далее</PrimaryButton>
+          <SecondaryButton onClick={onBack} style={{ flex: 1 }}>
+            Назад
+          </SecondaryButton>
+          <PrimaryButton onClick={onNext} disabled={!isValid} style={{ flex: 1 }}>
+            Далее
+          </PrimaryButton>
         </div>
       </Form>
     </Container>

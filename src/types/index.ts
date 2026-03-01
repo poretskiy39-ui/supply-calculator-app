@@ -1,5 +1,5 @@
 export type ServiceType = 'full' | 'logistics';
-export type TransportType = 'container' | 'ltl'; // новый тип
+export type TransportType = 'container' | 'ltl';
 
 export interface Product {
   id: string;
@@ -41,6 +41,9 @@ export interface GeneralSettings {
   logisticsRate: number;
   insurancePercent: number;
   agentRewardPercent: number;
+  salesExporterMarkupPercent: number;
+  salesAgentMarkupPercent: number;
+  salesLogisticsMarkupCurrency: number;
 }
 
 export interface CalculationResult {
@@ -52,6 +55,9 @@ export interface CalculationResult {
     insuranceRub: number;
     exporterCommissionRub: number;
     agentCommissionRub: number;
+    salesExporterMarkupRub: number;
+    salesAgentMarkupRub: number;
+    salesLogisticsMarkupRub: number;
     customsValueRub: number;
     dutyRub: number;
     vatRub: number;
@@ -79,7 +85,6 @@ export interface ContactInfo {
   email: string;
 }
 
-// ===== Логистика =====
 export type ContainerType = '20DC' | '40HC';
 export type ChinaPort = 'Shanghai' | 'Ningbo' | 'Xingang (Tianjin)' | 'Qingdao' | 'Dalian';
 export type DestinationCity = 'Москва' | 'Санкт-Петербург';
@@ -94,14 +99,12 @@ export interface LogisticsData {
   customsDutyPercent: number;
   insurancePercent: number;
 
-  // Для контейнера
   containerType?: ContainerType;
   portOfLoading?: ChinaPort;
   destinationCity?: DestinationCity;
   weightGross?: number;
 
-  // Для LTL
-  originCity?: string;           // город в Китае (свободный ввод)
+  originCity?: string;
   ltlWeight?: number;
   ltlVolume?: number;
   ltlDestination?: DestinationCity;
@@ -113,7 +116,7 @@ export interface LogisticsResult {
   totalRub: number;
   details: {
     oceanFreightRub: number;
-    railFreightRub: number;   // для LTL сюда идёт стоимость перевозки
+    railFreightRub: number;
     lastMileRub: number;
     customsValueRub: number;
     dutyRub: number;

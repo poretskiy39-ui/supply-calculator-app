@@ -9,9 +9,10 @@ const Container = styled.div`
 `;
 
 const Title = styled.h2`
+  font-family: var(--font-heading);
   font-size: ${theme.typography.h2};
   color: ${theme.colors.text};
-  margin-bottom: ${theme.spacing.lg};
+  margin: 0 0 ${theme.spacing.lg};
 `;
 
 const Form = styled.div`
@@ -56,13 +57,9 @@ const ButtonGroup = styled.div`
 const BackBtn = styled(SecondaryButton)`
   flex: 1;
 `;
+
 const SubmitBtn = styled(PrimaryButton)`
   flex: 1;
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
 `;
 
 interface Props {
@@ -85,7 +82,7 @@ const Step5Contact: React.FC<Props> = ({ contact, onUpdate, onBack, onSubmit }) 
             type="text"
             value={contact.name}
             onChange={e => onUpdate('name', e.target.value)}
-            placeholder="Иван Пукин"
+            placeholder="Иван Пупкин"
           />
         </Field>
         <Field>
@@ -94,7 +91,7 @@ const Step5Contact: React.FC<Props> = ({ contact, onUpdate, onBack, onSubmit }) 
             type="text"
             value={contact.company}
             onChange={e => onUpdate('company', e.target.value)}
-            placeholder="ООО 'БНАЛ'"
+            placeholder="ООО БИЗНЕС"
           />
         </Field>
         <Field>

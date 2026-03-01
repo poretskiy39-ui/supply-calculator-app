@@ -1,16 +1,21 @@
+export type ThemeMode = 'dark' | 'swiss-light';
+
 export const theme = {
   colors: {
-    bg: '#0A0A0F',
-    surface: 'rgba(18, 18, 18, 0.7)',   // полупрозрачный
-    surfaceLight: 'rgba(30, 30, 30, 0.7)',
-    accent: '#C6A15B',
-    accentHover: '#D4B37A',
-    text: '#FFFFFF',
-    textSecondary: 'rgba(255,255,255,0.7)',
-    textMuted: 'rgba(255,255,255,0.5)',
-    border: 'rgba(255,255,255,0.1)',
-    error: '#FF6B6B',
-    success: '#4CAF50',
+    bg: 'var(--color-bg)',
+    surface: 'var(--color-surface)',
+    surfaceLight: 'var(--color-surface-light)',
+    accent: 'var(--color-accent)',
+    accentHover: 'var(--color-accent-hover)',
+    accent20: 'var(--color-accent-20)',
+    accent30: 'var(--color-accent-30)',
+    accent40: 'var(--color-accent-40)',
+    text: 'var(--color-text)',
+    textSecondary: 'var(--color-text-secondary)',
+    textMuted: 'var(--color-text-muted)',
+    border: 'var(--color-border)',
+    error: 'var(--color-error)',
+    success: 'var(--color-success)',
   },
   spacing: {
     xs: '4px',
@@ -26,7 +31,7 @@ export const theme = {
     xl: '20px',
   },
   typography: {
-    fontFamily: '"Inter", -apple-system, sans-serif',
+    fontFamily: 'var(--font-family)',
     h1: '28px',
     h2: '20px',
     body: '15px',

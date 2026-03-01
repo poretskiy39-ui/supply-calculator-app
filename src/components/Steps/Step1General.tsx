@@ -11,32 +11,36 @@ const Container = styled.div`
 `;
 
 const Title = styled.h2`
+  font-family: var(--font-heading);
   font-size: ${theme.typography.h2};
   color: ${theme.colors.text};
-  margin-bottom: ${theme.spacing.lg};
+  margin: 0 0 ${theme.spacing.lg};
 `;
 
-const Section = styled.div`
+const Section = styled.section`
   background: ${theme.colors.surface};
-  backdrop-filter: ${theme.blur};
-  -webkit-backdrop-filter: ${theme.blur};
-  border-radius: ${theme.borderRadius.lg};
-  padding: ${theme.spacing.lg};
-  margin-bottom: ${theme.spacing.lg};
   border: 1px solid ${theme.colors.border};
+  border-radius: 14px;
+  padding: ${theme.spacing.lg};
+  margin-bottom: ${theme.spacing.md};
 `;
 
 const SectionTitle = styled.h3`
-  font-size: ${theme.typography.body};
-  color: ${theme.colors.accent};
-  margin-bottom: ${theme.spacing.md};
-  font-weight: 600;
+  font-size: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: ${theme.colors.textMuted};
+  margin: 0 0 ${theme.spacing.md};
 `;
 
 const Grid = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: ${theme.spacing.md};
+
+  @media (max-width: 520px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const CurrencyGrid = styled.div`
@@ -44,27 +48,21 @@ const CurrencyGrid = styled.div`
   grid-template-columns: repeat(3, 1fr);
   gap: ${theme.spacing.md};
 
-  @media (max-width: 480px) {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  @media (max-width: 360px) {
+  @media (max-width: 700px) {
     grid-template-columns: 1fr;
   }
 `;
 
 const Row = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: ${theme.spacing.sm};
-  color: ${theme.colors.textSecondary};
+  margin-top: ${theme.spacing.md};
   font-size: ${theme.typography.small};
+  color: ${theme.colors.textSecondary};
 `;
 
 const ErrorText = styled.div`
   color: ${theme.colors.error};
-  text-align: center;
-  margin-top: ${theme.spacing.md};
+  font-size: ${theme.typography.small};
+  margin-bottom: ${theme.spacing.md};
 `;
 
 interface Props {
@@ -76,13 +74,12 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
   const { rates, loading, error } = useExchangeRates();
 
   useEffect(() => {
-    if (rates) {
-      onUpdate({
-        exchangeRate: rates.usd,
-        euroRate: rates.eur,
-        cnyRate: rates.cny,
-      });
-    }
+    if (!rates) return;
+    onUpdate({
+      exchangeRate: rates.usd,
+      euroRate: rates.eur,
+      cnyRate: rates.cny,
+    });
   }, [rates, onUpdate]);
 
   return (
@@ -96,33 +93,31 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
         <SectionTitle>Валюты и курс</SectionTitle>
         <CurrencyGrid>
           <CurrencyInput
-            label="Курс USD → RUB"
+            label="Курс USD -> RUB"
             value={settings.exchangeRate}
             onChange={v => onUpdate({ exchangeRate: v })}
             min={0}
             step={0.01}
           />
           <CurrencyInput
-            label="Курс EUR → RUB"
+            label="Курс EUR -> RUB"
             value={settings.euroRate}
             onChange={v => onUpdate({ euroRate: v })}
             min={0}
             step={0.01}
           />
           <CurrencyInput
-            label="Курс CNY → RUB"
+            label="Курс CNY -> RUB"
             value={settings.cnyRate}
             onChange={v => onUpdate({ cnyRate: v })}
             min={0}
             step={0.01}
           />
         </CurrencyGrid>
-        <Row style={{ marginTop: theme.spacing.md }}>
-          Валюта инвойса: {settings.invoiceCurrency}
-        </Row>
+        <Row>Валюта инвойса: {settings.invoiceCurrency}</Row>
         <SelectInput
           value={settings.invoiceCurrency}
-          onChange={e => onUpdate({ invoiceCurrency: e.target.value as any })}
+          onChange={e => onUpdate({ invoiceCurrency: e.target.value as GeneralSettings['invoiceCurrency'] })}
         >
           <option value="USD">USD</option>
           <option value="EUR">EUR</option>
@@ -134,11 +129,11 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
         <SectionTitle>Базис поставки</SectionTitle>
         <SelectInput
           value={settings.incoterms}
-          onChange={e => onUpdate({ incoterms: e.target.value as any })}
+          onChange={e => onUpdate({ incoterms: e.target.value as GeneralSettings['incoterms'] })}
         >
           <option value="EXW">EXW (самовывоз)</option>
           <option value="FOB">FOB (погрузка на судно)</option>
-          <option value="CIF">CIF (страховка+фрахт)</option>
+          <option value="CIF">CIF (страховка и фрахт)</option>
           <option value="DAP">DAP (доставка до места)</option>
         </SelectInput>
       </Section>
@@ -147,14 +142,14 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
         <SectionTitle>Комиссии по умолчанию</SectionTitle>
         <Grid>
           <CurrencyInput
-            label="Платёжный агент (%)"
+            label="Платежный агент (%)"
             value={settings.agentCommissionPercent}
             onChange={v => onUpdate({ agentCommissionPercent: v })}
             min={0}
             step={0.01}
           />
           <CurrencyInput
-            label="Экспортёр (%)"
+            label="Экспортер (%)"
             value={settings.exporterCommissionPercent}
             onChange={v => onUpdate({ exporterCommissionPercent: v })}
             min={0}
@@ -168,14 +163,14 @@ const Step1General: React.FC<Props> = ({ settings, onUpdate }) => {
             step={0.01}
           />
           <CurrencyInput
-            label="КВ банка за перевод (%)"
+            label="Комиссия за перевод (%)"
             value={settings.bankTransferFeePercent}
             onChange={v => onUpdate({ bankTransferFeePercent: v })}
             min={0}
             step={0.01}
           />
           <CurrencyInput
-            label="За ведомость (%)"
+            label="Банковский контроль (%)"
             value={settings.bankControlFeePercent}
             onChange={v => onUpdate({ bankControlFeePercent: v })}
             min={0}

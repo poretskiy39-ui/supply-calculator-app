@@ -4,7 +4,7 @@ import { theme } from '../styles/theme';
 
 const Container = styled.div`
   padding: ${theme.spacing.lg};
-  max-width: 800px;
+  max-width: 920px;
   margin: 0 auto;
 `;
 
@@ -32,7 +32,6 @@ const NavItem = styled.button<{ active: boolean }>`
 
 const Content = styled.div`
   background: ${theme.colors.surface};
-  backdrop-filter: ${theme.blur};
   border-radius: ${theme.borderRadius.lg};
   padding: ${theme.spacing.xl};
   border: 1px solid ${theme.colors.border};

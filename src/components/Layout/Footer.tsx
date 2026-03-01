@@ -3,20 +3,18 @@ import styled from 'styled-components';
 import { theme } from '../../styles/theme';
 
 const FooterContainer = styled.footer`
-  padding: ${theme.spacing.lg} ${theme.spacing.lg};
+  padding: 10px ${theme.spacing.lg} 16px;
   text-align: center;
-  background: ${theme.colors.surface};
+  background: ${theme.colors.bg};
   border-top: 1px solid ${theme.colors.border};
   color: ${theme.colors.textMuted};
-  font-size: ${theme.typography.small};
+  font-size: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 `;
 
 const Footer: React.FC = () => {
-  return (
-    <FooterContainer>
-      © 2026 Supply Master · Для профессионалов импорта
-    </FooterContainer>
-  );
+  return <FooterContainer>Supply Calculator | Movers Group</FooterContainer>;
 };
 
 export default Footer;
