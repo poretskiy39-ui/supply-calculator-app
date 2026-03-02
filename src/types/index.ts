@@ -1,5 +1,5 @@
 export type ServiceType = 'full' | 'logistics';
-export type TransportType = 'container' | 'ltl';
+export type TransportType = 'container' | 'ltl' | 'air';
 
 export interface Product {
   id: string;

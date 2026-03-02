@@ -9,7 +9,7 @@ import {
   LogisticsResult,
 } from '../types';
 import { calculateTotalCost } from '../utils/calculations/full';
-import { calculateContainer, calculateLTL } from '../utils/calculations/logistics';
+import { calculateAir, calculateContainer, calculateLTL } from '../utils/calculations/logistics';
 
 const defaultSettings: GeneralSettings = {
   invoiceCurrency: 'USD',
@@ -122,15 +122,28 @@ const useCalculator = () => {
   };
 
   const calculateLogisticsCost = (): LogisticsResult | null => {
+    const rates = {
+      usd: settings.exchangeRate,
+      eur: settings.euroRate,
+      cny: settings.cnyRate,
+    };
+
     if (logisticsData.transportType === 'container') {
       if (!logisticsData.weightGross || !logisticsData.invoiceAmount) return null;
-      const result = calculateContainer(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
+      const result = calculateContainer(logisticsData, rates, settings.agentCommissionPercent);
       setLogisticsResult(result);
       return result;
     }
 
-    if (!logisticsData.ltlWeight || !logisticsData.invoiceAmount) return null;
-    const result = calculateLTL(logisticsData, settings.exchangeRate, settings.agentCommissionPercent);
+    if (logisticsData.transportType === 'air') {
+      if (!logisticsData.ltlWeight || !logisticsData.ltlVolume || !logisticsData.invoiceAmount) return null;
+      const result = calculateAir(logisticsData, rates, settings.agentCommissionPercent);
+      setLogisticsResult(result);
+      return result;
+    }
+
+    if (!logisticsData.ltlWeight || !logisticsData.ltlVolume || !logisticsData.invoiceAmount) return null;
+    const result = calculateLTL(logisticsData, rates, settings.agentCommissionPercent);
     setLogisticsResult(result);
     return result;
   };

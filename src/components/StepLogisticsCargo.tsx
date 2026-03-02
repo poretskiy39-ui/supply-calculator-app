@@ -106,12 +106,17 @@ interface Props {
 }
 
 const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
+  const isWeightAndVolumeTransport = data.transportType === 'ltl' || data.transportType === 'air';
   const isValid = Boolean(
     data.productName &&
       data.hsCode &&
       data.invoiceAmount > 0 &&
       ((data.transportType === 'container' && data.weightGross && data.weightGross > 0) ||
-        (data.transportType === 'ltl' && data.ltlWeight && data.ltlWeight > 0))
+        (isWeightAndVolumeTransport &&
+          data.ltlWeight &&
+          data.ltlWeight > 0 &&
+          data.ltlVolume &&
+          data.ltlVolume > 0))
   );
 
   const chinaPorts: ChinaPort[] = ['Shanghai', 'Ningbo', 'Xingang (Tianjin)', 'Qingdao', 'Dalian'];
@@ -128,6 +133,9 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
         </ToggleButton>
         <ToggleButton active={data.transportType === 'ltl'} onClick={() => onUpdate('transportType', 'ltl')}>
           Сборное авто
+        </ToggleButton>
+        <ToggleButton active={data.transportType === 'air'} onClick={() => onUpdate('transportType', 'air')}>
+          Авиа
         </ToggleButton>
       </ToggleGroup>
 
@@ -224,7 +232,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
                   type="text"
                   value={data.originCity || ''}
                   onChange={e => onUpdate('originCity', e.target.value)}
-                  placeholder="Например: Шэньчжэнь"
+                  placeholder="Например: Chongqing или Changsha"
                 />
               </Field>
               <Field>
@@ -248,7 +256,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
                 step={0.1}
               />
               <CurrencyInput
-                label="Объем (м3)"
+                label="Объем (м3) *"
                 value={data.ltlVolume || 0}
                 onChange={v => onUpdate('ltlVolume', v)}
                 min={0}
@@ -256,16 +264,6 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
               />
             </Grid>
 
-            <Grid>
-              <CheckboxLabel>
-                <input type="checkbox" checked={data.ltlPickup || false} onChange={e => onUpdate('ltlPickup', e.target.checked)} />
-                Забор груза в Китае
-              </CheckboxLabel>
-              <CheckboxLabel>
-                <input type="checkbox" checked={data.ltlDelivery || false} onChange={e => onUpdate('ltlDelivery', e.target.checked)} />
-                Доставка по городу назначения
-              </CheckboxLabel>
-            </Grid>
           </>
         )}
 
@@ -303,8 +301,16 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
 
         {data.transportType === 'ltl' && (
           <Note>
-            Стоимость считается по тарифу 2.8 USD/кг (минимум 300 USD). Если объемный вес выше фактического,
-            используется объемный вес 250 кг/м3.
+            Логика по презентации: тариф LCL по объему и направлению.
+            Chongqing/Changsha в Селятино: 155 / 145 / 135 USD за м3 (1-3 / 3.1-5 / 5.1-10 м3).
+            Chongqing в Шушары: 160 / 150 / 140 USD за м3.
+          </Note>
+        )}
+
+        {data.transportType === 'air' && (
+          <Note>
+            Логика по презентации: матрица авиа-тарифов с учетом плотности (кг/м3) и весового брейка (+45/+100/+300/+500/+1000),
+            объемный вес 167 кг/м3, pre-carriage 600-800 CNY, терминал Шереметьево для веса свыше 100 кг.
           </Note>
         )}
 
