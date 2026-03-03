@@ -127,3 +127,59 @@ export interface LogisticsResult {
   };
   inputData: LogisticsData;
 }
+
+export type ShipmentStatus = 'waiting' | 'in_transit' | 'customs' | 'delivered' | 'delayed';
+export type ShipmentEventStatus = 'done' | 'active' | 'pending';
+
+export interface ShipmentEvent {
+  id: number;
+  title: string;
+  detail: string;
+  status: ShipmentEventStatus;
+  notifySent: boolean;
+  createdAt: string;
+}
+
+export interface ShipmentNotification {
+  id: number;
+  text: string;
+  createdAt: string;
+}
+
+export interface ShipmentSummary {
+  id: string;
+  fromCity: string;
+  toCity: string;
+  status: ShipmentStatus;
+  etaDate: string;
+  vessel: string;
+  container: string;
+  weight: number;
+  volume: number;
+  cargoType: string;
+  updatedAt: string;
+  lastEvent: ShipmentEvent | null;
+}
+
+export interface ShipmentDetails extends ShipmentSummary {
+  clientTelegramId: number | null;
+  clientUsername: string;
+  clientName: string;
+  managerId: number;
+  managerName: string;
+  events: ShipmentEvent[];
+  notifications: ShipmentNotification[];
+}
+
+export interface ManagerUser {
+  id: number;
+  email: string;
+  name: string;
+  role: 'manager' | 'admin';
+}
+
+export interface ManagerSession {
+  token: string;
+  expiresAt: string;
+  user: ManagerUser;
+}
