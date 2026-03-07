@@ -1,12 +1,24 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { buildApiUrl } from '../../config/api';
+import { API_BASE_URL, buildApiUrl } from '../../config/api';
+import {
+  mockAdminCreateShipment,
+  mockAdminGetShipment,
+  mockAdminListShipments,
+  mockAdminNotifyShipment,
+  mockAdminUpdateShipmentPayments,
+  mockAdminUpdateShipmentStatus,
+  mockManagerLogin,
+  mockManagerLogout,
+  mockManagerVerify,
+} from '../../mocks/shipments';
 import { theme } from '../../styles/theme';
 import { ManagerSession, ShipmentDetails, ShipmentStatus } from '../../types';
 import { GlassCard } from '../UI/GlassCard';
 import { PrimaryButton, SecondaryButton } from '../UI';
 
 const SESSION_STORAGE_KEY = 'admin_session_v1';
+const DEFAULT_API_PLACEHOLDER = 'your-backend.up.railway.app';
 const shipmentStatuses: ShipmentStatus[] = ['waiting', 'in_transit', 'customs', 'delivered', 'delayed'];
 const statusLabels: Record<ShipmentStatus, string> = {
   waiting: 'Ожидание',
@@ -58,6 +70,13 @@ interface StatusForm {
   etaDate: string;
   notifyClient: boolean;
 }
+
+interface PaymentForm {
+  paymentTotalRub: string;
+  paymentPaidRub: string;
+}
+
+type AdminSection = 'shipments' | 'create';
 
 const Container = styled.div`
   padding: ${theme.spacing.lg};
@@ -169,17 +188,43 @@ const StatusPill = styled.span<{ $status: ShipmentStatus }>`
   letter-spacing: 0.08em;
   padding: 4px 8px;
   border-radius: 999px;
-  border: 1px solid ${theme.colors.border};
+  border: 1px solid
+    ${({ $status }) =>
+      $status === 'delivered'
+        ? 'rgba(42,107,58,0.6)'
+        : $status === 'delayed'
+          ? 'rgba(200,53,42,0.6)'
+          : $status === 'customs'
+            ? 'rgba(231,169,48,0.6)'
+            : $status === 'in_transit'
+              ? 'rgba(24,115,164,0.6)'
+              : 'rgba(128,141,158,0.6)'};
   background: ${({ $status }) =>
     $status === 'delivered'
       ? 'rgba(42,107,58,0.22)'
       : $status === 'delayed'
         ? 'rgba(200,53,42,0.22)'
-        : theme.colors.surfaceLight};
+        : $status === 'customs'
+          ? 'rgba(231,169,48,0.2)'
+          : $status === 'in_transit'
+            ? 'rgba(24,115,164,0.2)'
+            : 'rgba(128,141,158,0.18)'};
+  color: ${({ $status }) =>
+    $status === 'delivered'
+      ? '#2a6b3a'
+      : $status === 'delayed'
+        ? '#c8352a'
+        : $status === 'customs'
+          ? '#c67c00'
+          : $status === 'in_transit'
+            ? '#1873a4'
+            : theme.colors.textSecondary};
 `;
 
-const ShipmentRow = styled(GlassCard)`
+const ShipmentRow = styled(GlassCard)<{ $active?: boolean }>`
   cursor: pointer;
+  border-color: ${({ $active }) =>
+    $active ? `${theme.colors.accent}66` : theme.colors.border};
 `;
 
 const ShipmentHead = styled.div`
@@ -226,6 +271,32 @@ const SectionTitle = styled.h3`
   color: ${theme.colors.textMuted};
 `;
 
+const SectionMenu = styled.div`
+  display: flex;
+  gap: ${theme.spacing.sm};
+  margin-bottom: ${theme.spacing.lg};
+`;
+
+const SectionMenuButton = styled.button<{ $active: boolean }>`
+  flex: 1;
+  border: 1px solid ${({ $active }) => ($active ? `${theme.colors.accent}66` : theme.colors.border)};
+  background: ${({ $active }) => ($active ? `${theme.colors.accent}14` : theme.colors.surface)};
+  color: ${({ $active }) => ($active ? theme.colors.accent : theme.colors.textSecondary)};
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: ${theme.colors.accent}88;
+    color: ${theme.colors.accent};
+  }
+`;
+
 const parseApiError = async (response: Response): Promise<string> => {
   try {
     const data = await response.json();
@@ -233,6 +304,39 @@ const parseApiError = async (response: Response): Promise<string> => {
   } catch {
     return `HTTP ${response.status}`;
   }
+};
+
+const shouldUseMockFallback = (error: unknown): boolean => {
+  if (!(error instanceof Error)) return false;
+  const message = error.message.toLowerCase();
+  return (
+    message.includes('failed to fetch') ||
+    message.includes('networkerror') ||
+    message.includes('load failed') ||
+    message.includes('fetch failed') ||
+    message.includes('econnrefused') ||
+    message.includes('timeout') ||
+    /^http\s+\d{3}$/.test(message)
+  );
+};
+
+const getDefaultStatusTitle = (status: ShipmentStatus): string => {
+  if (status === 'waiting') return 'Отправление ожидает отгрузки';
+  if (status === 'in_transit') return 'Отправление в пути';
+  if (status === 'customs') return 'Отправление на таможне';
+  if (status === 'delivered') return 'Отправление доставлено';
+  return 'Отправление задержано';
+};
+
+const formatRub = (value: number): string =>
+  new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'RUB', maximumFractionDigits: 0 }).format(value);
+
+const getPaymentSnapshot = (shipment: ShipmentDetails) => {
+  const total = Math.max(0, Math.round(Number(shipment.paymentTotalRub ?? shipment.planRevenueRub ?? shipment.planCostRub ?? 0)));
+  const paid = Math.max(0, Math.round(Number(shipment.paymentPaidRub ?? 0)));
+  const normalizedTotal = Math.max(total, paid);
+  const remaining = Math.max(normalizedTotal - paid, 0);
+  return { total: normalizedTotal, paid, remaining };
 };
 
 async function requestJson<T>(path: string, init?: RequestInit, token?: string): Promise<T> {
@@ -275,6 +379,11 @@ const defaultStatusForm: StatusForm = {
   notifyClient: false,
 };
 
+const defaultPaymentForm: PaymentForm = {
+  paymentTotalRub: '',
+  paymentPaidRub: '',
+};
+
 const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const [session, setSession] = useState<ManagerSession | null>(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
@@ -284,6 +393,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   });
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
+  const [useMockApi, setUseMockApi] = useState(API_BASE_URL.includes(DEFAULT_API_PLACEHOLDER));
 
   const [shipments, setShipments] = useState<ShipmentDetails[]>([]);
   const [selected, setSelected] = useState<ShipmentDetails | null>(null);
@@ -291,7 +401,9 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const [search, setSearch] = useState('');
   const [createForm, setCreateForm] = useState<CreateShipmentForm>(defaultCreateForm);
   const [statusForm, setStatusForm] = useState<StatusForm>(defaultStatusForm);
+  const [paymentForm, setPaymentForm] = useState<PaymentForm>(defaultPaymentForm);
   const [notifyText, setNotifyText] = useState('');
+  const [activeSection, setActiveSection] = useState<AdminSection>('shipments');
 
   const authToken = session?.token || '';
 
@@ -305,6 +417,33 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
     });
   }, []);
 
+  const syncPaymentFormWithShipment = useCallback((shipment: ShipmentDetails) => {
+    const payment = getPaymentSnapshot(shipment);
+    setPaymentForm({
+      paymentTotalRub: payment.total ? String(payment.total) : '',
+      paymentPaidRub: payment.paid ? String(payment.paid) : '',
+    });
+  }, []);
+
+  const runWithApiFallback = useCallback(
+    async <T,>(apiRequest: () => Promise<T>, mockRequest: () => Promise<T>): Promise<T> => {
+      if (useMockApi) {
+        return mockRequest();
+      }
+
+      try {
+        return await apiRequest();
+      } catch (error) {
+        if (shouldUseMockFallback(error)) {
+          setUseMockApi(true);
+          return mockRequest();
+        }
+        throw error;
+      }
+    },
+    [useMockApi]
+  );
+
   const loadShipments = useCallback(async () => {
     if (!authToken) return;
     setIsBusy(true);
@@ -316,22 +455,37 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       const query = params.toString();
       const path = query ? `/admin/shipments?${query}` : '/admin/shipments';
 
-      const data = await requestJson<{ items: ShipmentDetails[] }>(path, undefined, authToken);
-      setShipments(Array.isArray(data.items) ? data.items : []);
+      const data = await runWithApiFallback(
+        () => requestJson<{ items: ShipmentDetails[] }>(path, undefined, authToken),
+        () => mockAdminListShipments({ status: statusFilter, search: search.trim() })
+      );
+      const nextShipments = Array.isArray(data.items) ? data.items : [];
+      setShipments(nextShipments);
+
+      if (nextShipments.length === 0) {
+        setSelected(null);
+        setPaymentForm(defaultPaymentForm);
+        return;
+      }
 
       if (selected) {
-        const refreshed = data.items.find((item) => item.id === selected.id) || null;
+        const refreshed = nextShipments.find((item) => item.id === selected.id) || nextShipments[0];
         setSelected(refreshed);
-        if (refreshed) {
-          syncStatusFormWithShipment(refreshed);
-        }
+        syncStatusFormWithShipment(refreshed);
+        syncPaymentFormWithShipment(refreshed);
+        return;
       }
+
+      const firstShipment = nextShipments[0];
+      setSelected(firstShipment);
+      syncStatusFormWithShipment(firstShipment);
+      syncPaymentFormWithShipment(firstShipment);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось загрузить отправления');
     } finally {
       setIsBusy(false);
     }
-  }, [authToken, search, selected, statusFilter, syncStatusFormWithShipment]);
+  }, [authToken, runWithApiFallback, search, selected, statusFilter, syncPaymentFormWithShipment, syncStatusFormWithShipment]);
 
   const loadShipmentDetails = useCallback(
     async (shipmentId: string) => {
@@ -339,20 +493,25 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       setIsBusy(true);
       setError(null);
       try {
-        const data = await requestJson<{ item: ShipmentDetails }>(
-          `/admin/shipments/${shipmentId}`,
-          undefined,
-          authToken
+        const data = await runWithApiFallback(
+          () =>
+            requestJson<{ item: ShipmentDetails }>(
+              `/admin/shipments/${shipmentId}`,
+              undefined,
+              authToken
+            ),
+          () => mockAdminGetShipment(shipmentId)
         );
         setSelected(data.item);
         syncStatusFormWithShipment(data.item);
+        syncPaymentFormWithShipment(data.item);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Не удалось загрузить отправление');
       } finally {
         setIsBusy(false);
       }
     },
-    [authToken, syncStatusFormWithShipment]
+    [authToken, runWithApiFallback, syncPaymentFormWithShipment, syncStatusFormWithShipment]
   );
 
   useEffect(() => {
@@ -369,8 +528,14 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
           setIsCheckingSession(false);
           return;
         }
-        await requestJson<{ user: ManagerSession['user'] }>('/auth/verify', { method: 'GET' }, saved.token);
-        setSession(saved);
+        const verifyResponse = await runWithApiFallback(
+          () => requestJson<{ user: ManagerSession['user'] }>('/auth/verify', { method: 'GET' }, saved.token),
+          () => mockManagerVerify(saved.token)
+        );
+        setSession({
+          ...saved,
+          user: verifyResponse.user,
+        });
       } catch {
         localStorage.removeItem(SESSION_STORAGE_KEY);
       } finally {
@@ -379,7 +544,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
     };
 
     void bootstrap();
-  }, []);
+  }, [runWithApiFallback]);
 
   useEffect(() => {
     if (authToken) {
@@ -391,10 +556,14 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
     setIsBusy(true);
     setError(null);
     try {
-      const data = await requestJson<LoginResponse>('/auth/manager/login', {
-        method: 'POST',
-        body: JSON.stringify(loginForm),
-      });
+      const data = await runWithApiFallback(
+        () =>
+          requestJson<LoginResponse>('/auth/manager/login', {
+            method: 'POST',
+            body: JSON.stringify(loginForm),
+          }),
+        () => mockManagerLogin(loginForm.email, loginForm.password)
+      );
       setSession(data);
       localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(data));
     } catch (err) {
@@ -407,7 +576,10 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
   const handleLogout = async () => {
     try {
       if (authToken) {
-        await requestJson<{ success: boolean }>('/auth/manager/logout', { method: 'POST' }, authToken);
+        await runWithApiFallback(
+          () => requestJson<{ success: boolean }>('/auth/manager/logout', { method: 'POST' }, authToken),
+          () => mockManagerLogout(authToken)
+        );
       }
     } catch {
       // no-op
@@ -416,29 +588,37 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       setSession(null);
       setSelected(null);
       setShipments([]);
+      setPaymentForm(defaultPaymentForm);
     }
   };
 
   const handleCreateShipment = async () => {
-    if (!authToken) return;
+    if (!authToken || !session) return;
     setIsBusy(true);
     setError(null);
     try {
-      await requestJson<{ item: ShipmentDetails }>(
-        '/admin/shipments',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            ...createForm,
-            clientTelegramId: createForm.clientTelegramId ? Number(createForm.clientTelegramId) : null,
-            weight: createForm.weight ? Number(createForm.weight) : 0,
-            volume: createForm.volume ? Number(createForm.volume) : 0,
-          }),
-        },
-        authToken
+      const payload = {
+        ...createForm,
+        clientTelegramId: createForm.clientTelegramId ? Number(createForm.clientTelegramId) : null,
+        weight: createForm.weight ? Number(createForm.weight) : 0,
+        volume: createForm.volume ? Number(createForm.volume) : 0,
+      };
+
+      await runWithApiFallback(
+        () =>
+          requestJson<{ item: ShipmentDetails }>(
+            '/admin/shipments',
+            {
+              method: 'POST',
+              body: JSON.stringify(payload),
+            },
+            authToken
+          ),
+        () => mockAdminCreateShipment(payload, session.user)
       );
       setCreateForm(defaultCreateForm);
       await loadShipments();
+      setActiveSection('shipments');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Не удалось создать отправление');
     } finally {
@@ -448,16 +628,29 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
 
   const handleUpdateStatus = async () => {
     if (!authToken || !selected) return;
+    const title = statusForm.title.trim() || getDefaultStatusTitle(statusForm.status);
+    const payload = {
+      ...statusForm,
+      title,
+    };
+
     setIsBusy(true);
     setError(null);
     try {
-      await requestJson<{ item: ShipmentDetails }>(
-        `/admin/shipments/${selected.id}/status`,
-        {
-          method: 'PATCH',
-          body: JSON.stringify(statusForm),
-        },
-        authToken
+      await runWithApiFallback(
+        () =>
+          requestJson<{ item: ShipmentDetails }>(
+            `/admin/shipments/${selected.id}/status`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify(payload),
+            },
+            authToken
+          ),
+        () =>
+          mockAdminUpdateShipmentStatus(selected.id, payload).then(({ item }) => ({
+            item,
+          }))
       );
       await loadShipmentDetails(selected.id);
       await loadShipments();
@@ -468,18 +661,56 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
     }
   };
 
-  const handleNotifyClient = async () => {
-    if (!authToken || !selected || !notifyText.trim()) return;
+  const handleUpdatePayments = async () => {
+    if (!authToken || !selected) return;
+
+    const paymentTotalRub = Math.max(0, Math.round(Number(paymentForm.paymentTotalRub) || 0));
+    const paymentPaidRub = Math.max(0, Math.round(Number(paymentForm.paymentPaidRub) || 0));
+
     setIsBusy(true);
     setError(null);
     try {
-      await requestJson<{ success: boolean }>(
-        `/admin/shipments/${selected.id}/notify`,
-        {
-          method: 'POST',
-          body: JSON.stringify({ text: notifyText.trim() }),
-        },
-        authToken
+      await runWithApiFallback(
+        () =>
+          requestJson<{ item: ShipmentDetails }>(
+            `/admin/shipments/${selected.id}/payment`,
+            {
+              method: 'PATCH',
+              body: JSON.stringify({ paymentTotalRub, paymentPaidRub }),
+            },
+            authToken
+          ),
+        () => mockAdminUpdateShipmentPayments(selected.id, { paymentTotalRub, paymentPaidRub })
+      );
+      await loadShipmentDetails(selected.id);
+      await loadShipments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Не удалось обновить информацию об оплате');
+    } finally {
+      setIsBusy(false);
+    }
+  };
+
+  const handleNotifyClient = async () => {
+    const trimmedNotifyText = notifyText.trim();
+    if (!authToken || !selected || !trimmedNotifyText) return;
+    setIsBusy(true);
+    setError(null);
+    try {
+      await runWithApiFallback(
+        () =>
+          requestJson<{ success: boolean }>(
+            `/admin/shipments/${selected.id}/notify`,
+            {
+              method: 'POST',
+              body: JSON.stringify({ text: trimmedNotifyText }),
+            },
+            authToken
+          ),
+        () =>
+          mockAdminNotifyShipment(selected.id, trimmedNotifyText).then(({ success }) => ({
+            success,
+          }))
       );
       setNotifyText('');
       await loadShipmentDetails(selected.id);
@@ -498,6 +729,8 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
       Boolean(createForm.cargoType.trim())
     );
   }, [createForm]);
+
+  const selectedPayment = selected ? getPaymentSnapshot(selected) : null;
 
   if (isCheckingSession) {
     return (
@@ -556,7 +789,8 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
         <div>
           <Title>Админ-панель</Title>
           <Subtitle>
-            {session.user.name} ({session.user.role}) • {session.user.email}
+            {session.user.name} ({session.user.role}) • {session.user.email} •{' '}
+            {useMockApi ? 'режим demo-данных' : 'режим API'}
           </Subtitle>
         </div>
         <Row>
@@ -567,8 +801,26 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
 
       {error && <ErrorText>{error}</ErrorText>}
 
+      <SectionMenu>
+        <SectionMenuButton
+          type="button"
+          $active={activeSection === 'shipments'}
+          onClick={() => setActiveSection('shipments')}
+        >
+          Текущие поставки
+        </SectionMenuButton>
+        <SectionMenuButton
+          type="button"
+          $active={activeSection === 'create'}
+          onClick={() => setActiveSection('create')}
+        >
+          Новая поставка
+        </SectionMenuButton>
+      </SectionMenu>
+
       <TwoCols>
-        <GlassCard>
+        {activeSection === 'create' && (
+        <GlassCard style={{ gridColumn: '1 / -1' }}>
           <SectionTitle>Создать отправление</SectionTitle>
           <Grid>
             <Field>
@@ -680,8 +932,10 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
             </PrimaryButton>
           </Grid>
         </GlassCard>
+        )}
 
-        <GlassCard>
+        {activeSection === 'shipments' && (
+        <GlassCard style={{ gridColumn: '1 / -1' }}>
           <SectionTitle>Список отправлений</SectionTitle>
           <TwoCols>
             <Field>
@@ -714,27 +968,37 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
             {shipments.length === 0 ? (
               <Empty>Отправлений нет.</Empty>
             ) : (
-              shipments.map((shipment) => (
-                <ShipmentRow key={shipment.id} onClick={() => void loadShipmentDetails(shipment.id)}>
-                  <ShipmentHead>
-                    <ShipmentId>{shipment.id}</ShipmentId>
-                    <StatusPill $status={shipment.status}>{statusLabels[shipment.status]}</StatusPill>
-                  </ShipmentHead>
-                  <Meta>
-                    {shipment.fromCity} → {shipment.toCity}
-                    <br />
-                    Клиент: {shipment.clientName}
-                    <br />
-                    ETA: {shipment.etaDate || 'не указан'}
-                  </Meta>
-                </ShipmentRow>
-              ))
+              shipments.map((shipment) => {
+                const payment = getPaymentSnapshot(shipment);
+                return (
+                  <ShipmentRow
+                    key={shipment.id}
+                    $active={selected?.id === shipment.id}
+                    onClick={() => void loadShipmentDetails(shipment.id)}
+                  >
+                    <ShipmentHead>
+                      <ShipmentId>{shipment.id}</ShipmentId>
+                      <StatusPill $status={shipment.status}>{statusLabels[shipment.status]}</StatusPill>
+                    </ShipmentHead>
+                    <Meta>
+                      {shipment.fromCity} → {shipment.toCity}
+                      <br />
+                      Клиент: {shipment.clientName}
+                      <br />
+                      ETA: {shipment.etaDate || 'не указан'}
+                      <br />
+                      Оплачено: {formatRub(payment.paid)} • Осталось: {formatRub(payment.remaining)}
+                    </Meta>
+                  </ShipmentRow>
+                );
+              })
             )}
           </Grid>
         </GlassCard>
+        )}
       </TwoCols>
 
-      {selected && (
+      {activeSection === 'shipments' && selected && (
         <GlassCard style={{ marginTop: theme.spacing.lg }}>
           <SectionTitle>{`Отправление ${selected.id}`}</SectionTitle>
           <Meta>
@@ -744,6 +1008,44 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
             <br />
             Текущий статус: {statusLabels[selected.status]}
           </Meta>
+
+          {selectedPayment && (
+            <Grid style={{ marginTop: theme.spacing.md }}>
+              <SectionTitle>Финансы клиента</SectionTitle>
+              <Meta>
+                Общая сумма: {formatRub(selectedPayment.total)}
+                <br />
+                Оплачено: {formatRub(selectedPayment.paid)}
+                <br />
+                Осталось: {formatRub(selectedPayment.remaining)}
+              </Meta>
+              <TwoCols>
+                <Field>
+                  <Label>Сумма к оплате (₽)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={paymentForm.paymentTotalRub}
+                    onChange={(e) => setPaymentForm((prev) => ({ ...prev, paymentTotalRub: e.target.value }))}
+                    placeholder="0"
+                  />
+                </Field>
+                <Field>
+                  <Label>Оплачено (₽)</Label>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={paymentForm.paymentPaidRub}
+                    onChange={(e) => setPaymentForm((prev) => ({ ...prev, paymentPaidRub: e.target.value }))}
+                    placeholder="0"
+                  />
+                </Field>
+              </TwoCols>
+              <SecondaryButton onClick={handleUpdatePayments} disabled={isBusy}>
+                {isBusy ? 'Сохраняем...' : 'Сохранить оплату'}
+              </SecondaryButton>
+            </Grid>
+          )}
 
           <Grid style={{ marginTop: theme.spacing.md }}>
             <TwoCols>
@@ -793,7 +1095,7 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
               />
               Уведомить клиента в Telegram
             </Checkbox>
-            <PrimaryButton onClick={handleUpdateStatus} disabled={isBusy || !statusForm.title.trim()}>
+            <PrimaryButton onClick={handleUpdateStatus} disabled={isBusy}>
               {isBusy ? 'Сохраняем...' : 'Обновить статус'}
             </PrimaryButton>
           </Grid>
@@ -813,6 +1115,12 @@ const AdminPanel: React.FC<Props> = ({ onBack }) => {
             </SecondaryButton>
           </Grid>
         </GlassCard>
+      )}
+
+      {activeSection === 'shipments' && !selected && (
+        <Empty style={{ marginTop: theme.spacing.lg }}>
+          Выберите поставку из списка, чтобы изменить статус, оплату или отправить уведомление.
+        </Empty>
       )}
     </Container>
   );

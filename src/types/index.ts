@@ -1,5 +1,17 @@
+// src/types/index.ts
+
 export type ServiceType = 'full' | 'logistics';
 export type TransportType = 'container' | 'ltl' | 'air';
+
+// ── Маршруты ──────────────────────────────────────────────────────────────────
+export type RouteType = 'china_ru' | 'eu_tr_ru';
+
+export const ROUTE_LABELS: Record<RouteType, string> = {
+  china_ru: '🇨🇳 Китай → Россия',
+  eu_tr_ru: '🇪🇺 ЕС → Турция → Россия',
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export interface Product {
   id: string;
@@ -44,6 +56,9 @@ export interface GeneralSettings {
   salesExporterMarkupPercent: number;
   salesAgentMarkupPercent: number;
   salesLogisticsMarkupCurrency: number;
+  // СВХ
+  svhDays?: number;
+  svhRatePerDay?: number;
 }
 
 export interface CalculationResult {
@@ -68,6 +83,7 @@ export interface CalculationResult {
     bankCommissionsRub: number;
     markingRub: number;
     agentRewardRub: number;
+    svhRub?: number;
   };
 }
 
@@ -91,6 +107,7 @@ export type DestinationCity = 'Москва' | 'Санкт-Петербург';
 
 export interface LogisticsData {
   transportType: TransportType;
+  route?: RouteType;              // ← НОВОЕ: маршрут (по умолчанию china_ru)
   productName: string;
   hsCode: string;
   invoiceAmount: number;
@@ -99,17 +116,25 @@ export interface LogisticsData {
   customsDutyPercent: number;
   insurancePercent: number;
 
+  // Контейнер (Китай → РФ)
   containerType?: ContainerType;
   portOfLoading?: ChinaPort;
   destinationCity?: DestinationCity;
   weightGross?: number;
 
+  // LTL / Авиа (Китай → РФ)
   originCity?: string;
   ltlWeight?: number;
   ltlVolume?: number;
   ltlDestination?: DestinationCity;
   ltlPickup?: boolean;
   ltlDelivery?: boolean;
+
+  // ── EU → TR → RF ─────────────────────────────────────────────────────
+  euOriginCity?: string;              // город отправки в ЕС
+  traderCommissionPercent?: number;   // комиссия турецкого трейдера (%)
+  istanbulStorageDays?: number;       // дней хранения в Стамбуле
+  svhDays?: number;                   // дней СВХ в России
 }
 
 export interface LogisticsResult {
@@ -123,11 +148,17 @@ export interface LogisticsResult {
     vatRub: number;
     agentCommissionRub: number;
     insuranceRub: number;
+    // EU→TR→RF специфика
+    turkeyTraderCommissionRub?: number;
+    turkeyStorageRub?: number;
+    turkeyTruckRub?: number;
+    svhRub?: number;
     note?: string;
   };
   inputData: LogisticsData;
 }
 
+// ── Статусы отправления ───────────────────────────────────────────────────────
 export type ShipmentStatus = 'waiting' | 'in_transit' | 'customs' | 'delivered' | 'delayed';
 export type ShipmentEventStatus = 'done' | 'active' | 'pending';
 
@@ -148,6 +179,7 @@ export interface ShipmentNotification {
 
 export interface ShipmentSummary {
   id: string;
+  clientName: string;
   fromCity: string;
   toCity: string;
   status: ShipmentStatus;
@@ -159,6 +191,9 @@ export interface ShipmentSummary {
   cargoType: string;
   updatedAt: string;
   lastEvent: ShipmentEvent | null;
+  paymentTotalRub?: number;
+  paymentPaidRub?: number;
+  route?: RouteType;
 }
 
 export interface ShipmentDetails extends ShipmentSummary {
@@ -169,6 +204,14 @@ export interface ShipmentDetails extends ShipmentSummary {
   managerName: string;
   events: ShipmentEvent[];
   notifications: ShipmentNotification[];
+  // Финансы (план/факт)
+  invoiceUsd?: number;
+  planCostRub?: number;
+  planRevenueRub?: number;
+  planMarginRub?: number;
+  planMarginPercent?: number;
+  factCostRub?: number;
+  factMarginRub?: number;
 }
 
 export interface ManagerUser {

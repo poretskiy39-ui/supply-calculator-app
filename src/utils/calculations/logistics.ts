@@ -1,7 +1,9 @@
+// src/utils/calculations/logistics.ts
 import { LogisticsData, LogisticsResult } from '../../types';
 import {
   AIR_PRICING,
   CONTAINER_PRICING,
+  EU_TR_RU_PRICING,
   LOGISTICS_DEFAULTS,
   LTL_PRICING,
   type AirDensityTier,
@@ -9,7 +11,7 @@ import {
 } from '../../config/logisticsPricing';
 
 const AGENT_COMMISSION_PERCENT = LOGISTICS_DEFAULTS.agentCommissionPercent;
-const VAT_PERCENT = LOGISTICS_DEFAULTS.vatPercent;
+const VAT_PERCENT = LOGISTICS_DEFAULTS.vatPercent; // 20
 
 type InvoiceCurrency = LogisticsData['invoiceCurrency'];
 type RailRateBucket = { upTo24t?: number; from24to28t?: number; upTo26_5t?: number };
@@ -26,27 +28,30 @@ const getInvoiceRates = (rates: LogisticsRates): Record<InvoiceCurrency, number>
   CNY: rates.cny ?? rates.usd * 0.14,
 });
 
-const convertInvoiceToRub = (amount: number, currency: InvoiceCurrency, rates: Record<InvoiceCurrency, number>): number => {
-  return amount * rates[currency];
-};
+const convertInvoiceToRub = (
+  amount: number,
+  currency: InvoiceCurrency,
+  rates: Record<InvoiceCurrency, number>
+): number => amount * rates[currency];
 
 const calculateInsuranceRub = (invoiceRub: number, insurancePercent: number): number => {
   if (invoiceRub <= 0 || insurancePercent <= 0) return 0;
   return invoiceRub * (insurancePercent / 100);
 };
 
+/**
+ * ПРАВИЛЬНАЯ ФОРМУЛА таможенных платежей:
+ *   Пошлина = customsValueRub × dutyPercent / 100
+ *   НДС     = (customsValueRub + пошлина) × 22%   ← НЕ от инвойса
+ */
 const calculateDutyAndVat = (
   customsValueRub: number,
   needCustoms: boolean,
   customsDutyPercent: number
 ): { dutyRub: number; vatRub: number } => {
-  if (!needCustoms || customsValueRub <= 0) {
-    return { dutyRub: 0, vatRub: 0 };
-  }
-
+  if (!needCustoms || customsValueRub <= 0) return { dutyRub: 0, vatRub: 0 };
   const dutyRub = customsValueRub * (customsDutyPercent / 100);
   const vatRub = (customsValueRub + dutyRub) * (VAT_PERCENT / 100);
-
   return { dutyRub, vatRub };
 };
 
@@ -64,10 +69,10 @@ const getAirDensityTier = (densityKgPerM3: number): AirDensityTier => {
 
 const getAirWeightBreak = (chargeableWeight: number): AirWeightBreak => {
   if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus1000) return 'plus1000';
-  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus500) return 'plus500';
-  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus300) return 'plus300';
-  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus100) return 'plus100';
-  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus45) return 'plus45';
+  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus500)  return 'plus500';
+  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus300)  return 'plus300';
+  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus100)  return 'plus100';
+  if (chargeableWeight >= AIR_PRICING.weightBreakThresholdsKg.plus45)   return 'plus45';
   return 'n';
 };
 
@@ -82,16 +87,18 @@ const normalizeOrigin = (origin?: string): string => (origin || '').trim().toLow
 
 const resolveLtlRouteName = (originCity: string | undefined, destination: string): string => {
   const normalized = normalizeOrigin(originCity);
-
   if (destination === 'Москва') {
     if (normalized.includes('changsha') || normalized.includes('чаньша') || normalized.includes('чанша')) {
       return 'Changsha -> Селятино';
     }
     return 'Chongqing -> Селятино';
   }
-
   return 'Chongqing -> Шушары';
 };
+
+// ─────────────────────────────────────────────────────────────────────────────
+// КИТАЙ: Контейнер
+// ─────────────────────────────────────────────────────────────────────────────
 
 export const calculateContainer = (
   data: LogisticsData,
@@ -120,8 +127,9 @@ export const calculateContainer = (
         : railRatesForCity.from24to28t!
       : railRatesForCity.upTo26_5t!;
 
-  const lastMileRub =
-    CONTAINER_PRICING.lastMileRatesRub[data.destinationCity as keyof typeof CONTAINER_PRICING.lastMileRatesRub];
+  const lastMileRub = CONTAINER_PRICING.lastMileRatesRub[
+    data.destinationCity as keyof typeof CONTAINER_PRICING.lastMileRatesRub
+  ];
 
   const invoiceInRub = convertInvoiceToRub(data.invoiceAmount, data.invoiceCurrency, invoiceRates);
   const insuranceRub = calculateInsuranceRub(invoiceInRub, data.insurancePercent);
@@ -149,6 +157,10 @@ export const calculateContainer = (
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// КИТАЙ: Сборное авто (LTL)
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const calculateLTL = (
   data: LogisticsData,
   rates: LogisticsRates,
@@ -157,11 +169,8 @@ export const calculateLTL = (
   if (!data.ltlDestination || !LTL_PRICING.destinations.includes(data.ltlDestination)) {
     throw new Error('Неверный город назначения. Доступно: Москва, Санкт-Петербург');
   }
-
   const volume = data.ltlVolume || 0;
-  if (volume <= 0) {
-    throw new Error('Для LCL нужен объем груза (м3)');
-  }
+  if (volume <= 0) throw new Error('Для LCL нужен объем груза (м3)');
 
   const usdRate = rates.usd;
   const invoiceRates = getInvoiceRates(rates);
@@ -204,6 +213,10 @@ export const calculateLTL = (
   };
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// КИТАЙ: Авиа
+// ─────────────────────────────────────────────────────────────────────────────
+
 export const calculateAir = (
   data: LogisticsData,
   rates: LogisticsRates,
@@ -212,12 +225,9 @@ export const calculateAir = (
   if (!data.ltlDestination || !AIR_PRICING.destinations.includes(data.ltlDestination)) {
     throw new Error('Неверный город назначения. Доступно: Москва, Санкт-Петербург');
   }
-
   const weight = data.ltlWeight || 0;
   const volume = data.ltlVolume || 0;
-  if (weight <= 0 || volume <= 0) {
-    throw new Error('Для авиа нужны вес и объем груза');
-  }
+  if (weight <= 0 || volume <= 0) throw new Error('Для авиа нужны вес и объем груза');
 
   const usdRate = rates.usd;
   const invoiceRates = getInvoiceRates(rates);
@@ -238,8 +248,8 @@ export const calculateAir = (
   const preCarriageRub = preCarriageCny * cnyRate;
 
   const terminalRub =
-    chargeableWeight > 100
-      ? Math.max(chargeableWeight * AIR_PRICING.terminalRubPerKg, AIR_PRICING.terminalMinRub) +
+    weight > 100
+      ? Math.max(weight * AIR_PRICING.terminalRubPerKg, AIR_PRICING.terminalMinRub) +
         AIR_PRICING.borderFormalitiesRub
       : 0;
 
@@ -271,8 +281,111 @@ export const calculateAir = (
         `- Оплачиваемый вес: ${chargeableWeight.toFixed(2)} кг | Тариф: $${rateUsdPerKg}/кг (${weightBreak})\n` +
         `- Авиафрахт: $${airFreightUsd.toFixed(2)}${isMinChargeApplied ? ' (минимальный M-чардж)' : ''}\n` +
         `- Pre-carriage: ${preCarriageCny} CNY\n` +
-        `- Терминал Шереметьево: ${terminalRub.toFixed(2)} ₽\n` +
+        `- Терминал Шереметьево (факт. вес): ${terminalRub.toFixed(2)} ₽\n` +
         `- Курсы: USD ${usdRate} ₽, CNY ${cnyRate} ₽`,
+    },
+    inputData: data,
+  };
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ЕС → ТУРЦИЯ → РФ (авто, через турецкого трейдера)
+//
+// Структура стоимости:
+//   Инвойс ЕС
+//   + Комиссия турецкого трейдера (% от инвойса, по умолчанию 5%)
+//   + Хранение в Стамбуле (руб/день × дни)
+//   + Фура Стамбул → граница РФ (фикс)
+//   + Страховка (% от инвойса)
+//   + Комиссия агента
+//   ───────────────────────────────────────
+//   = Таможенная стоимость (CIF-база)
+//   + Пошлина (% от ТС)
+//   + НДС 22% от (ТС + пошлина)
+//   + СВХ (дни × ставка/день)
+//   + Таможенный сбор + декларация
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const calculateEUviaTurkey = (
+  data: LogisticsData,
+  rates: LogisticsRates,
+  agentCommissionPercent: number = AGENT_COMMISSION_PERCENT
+): LogisticsResult => {
+  const invoiceRates = getInvoiceRates(rates);
+  const invoiceInRub = convertInvoiceToRub(data.invoiceAmount, data.invoiceCurrency, invoiceRates);
+
+  // Параметры с дефолтами
+  const traderCommPercent = data.traderCommissionPercent
+    ?? EU_TR_RU_PRICING.traderCommissionDefaultPercent;
+  const istanbulDays = data.istanbulStorageDays ?? 5;
+  const svhDays = data.svhDays ?? EU_TR_RU_PRICING.svhDefaultDays;
+
+  // Турецкие затраты
+  const turkeyTraderCommissionRub = invoiceInRub * (traderCommPercent / 100);
+  const turkeyStorageRub = EU_TR_RU_PRICING.istanbulStorageRubPerDay * istanbulDays;
+  const turkeyTruckRub = EU_TR_RU_PRICING.truckIstanbulToRuFix;
+
+  // Страховка и агент
+  const insuranceRub = calculateInsuranceRub(invoiceInRub, data.insurancePercent);
+  const agentCommissionRub = calculateAgentCommission(
+    invoiceInRub + turkeyTruckRub,
+    agentCommissionPercent
+  );
+
+  // Таможенная стоимость = инвойс + транспорт до РФ + страховка + комиссия трейдера
+  const customsValueRub =
+    invoiceInRub +
+    turkeyTraderCommissionRub +
+    turkeyTruckRub +
+    insuranceRub +
+    agentCommissionRub;
+
+  const { dutyRub, vatRub } = calculateDutyAndVat(customsValueRub, data.needCustoms, data.customsDutyPercent);
+
+  // СВХ на российской стороне
+  const svhRub = EU_TR_RU_PRICING.svhRuDefaultRubPerDay * svhDays;
+
+  // Таможенный сбор + декларация
+  const customsFeeRub = EU_TR_RU_PRICING.customsFeeRub;
+  const declarationCostRub = EU_TR_RU_PRICING.declarationCostRub;
+
+  const totalRub =
+    invoiceInRub +
+    turkeyTraderCommissionRub +
+    turkeyStorageRub +
+    turkeyTruckRub +
+    insuranceRub +
+    agentCommissionRub +
+    dutyRub +
+    vatRub +
+    svhRub +
+    customsFeeRub +
+    declarationCostRub;
+
+  return {
+    totalRub,
+    details: {
+      oceanFreightRub: 0,
+      railFreightRub: turkeyTruckRub,   // фура = основной транспорт
+      lastMileRub: 0,
+      customsValueRub,
+      dutyRub,
+      vatRub,
+      agentCommissionRub,
+      insuranceRub,
+      turkeyTraderCommissionRub,
+      turkeyStorageRub,
+      turkeyTruckRub,
+      svhRub,
+      note:
+        `ЕС → Турция → Россия\n` +
+        `- Инвойс: ${data.invoiceAmount.toFixed(2)} ${data.invoiceCurrency}\n` +
+        `- Комиссия трейдера: ${traderCommPercent}% = ${turkeyTraderCommissionRub.toFixed(0)} ₽\n` +
+        `- Хранение Стамбул: ${istanbulDays} дней = ${turkeyStorageRub.toFixed(0)} ₽\n` +
+        `- Фура Стамбул → РФ: ${turkeyTruckRub.toFixed(0)} ₽\n` +
+        `- СВХ Россия: ${svhDays} дней = ${svhRub.toFixed(0)} ₽\n` +
+        `- Таможенная стоимость: ${customsValueRub.toFixed(0)} ₽\n` +
+        `- НДС 22%: ${vatRub.toFixed(0)} ₽`,
     },
     inputData: data,
   };

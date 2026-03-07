@@ -84,11 +84,11 @@ const ToggleGroup = styled.div`
   margin-bottom: ${theme.spacing.md};
 `;
 
-const ToggleButton = styled.button<{ active: boolean }>`
+const ToggleButton = styled.button<{ $active: boolean }>`
   flex: 1;
   padding: ${theme.spacing.md};
-  background: ${({ active }) => (active ? theme.colors.text : theme.colors.surface)};
-  color: ${({ active }) => (active ? theme.colors.bg : theme.colors.text)};
+  background: ${({ $active }) => ($active ? theme.colors.text : theme.colors.surface)};
+  color: ${({ $active }) => ($active ? theme.colors.bg : theme.colors.text)};
   border: 1px solid ${theme.colors.border};
   border-radius: 10px;
   font-weight: 600;
@@ -106,17 +106,17 @@ interface Props {
 }
 
 const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack }) => {
-  const isWeightAndVolumeTransport = data.transportType === 'ltl' || data.transportType === 'air';
+  const isContainerValid = data.transportType === 'container' && Boolean(data.weightGross && data.weightGross > 0);
+  const isLtlValid = data.transportType === 'ltl' && Boolean(data.ltlVolume && data.ltlVolume > 0);
+  const isAirValid =
+    data.transportType === 'air' &&
+    Boolean(data.ltlWeight && data.ltlWeight > 0 && data.ltlVolume && data.ltlVolume > 0);
+
   const isValid = Boolean(
     data.productName &&
       data.hsCode &&
       data.invoiceAmount > 0 &&
-      ((data.transportType === 'container' && data.weightGross && data.weightGross > 0) ||
-        (isWeightAndVolumeTransport &&
-          data.ltlWeight &&
-          data.ltlWeight > 0 &&
-          data.ltlVolume &&
-          data.ltlVolume > 0))
+      (isContainerValid || isLtlValid || isAirValid)
   );
 
   const chinaPorts: ChinaPort[] = ['Shanghai', 'Ningbo', 'Xingang (Tianjin)', 'Qingdao', 'Dalian'];
@@ -128,13 +128,13 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
       <Title>Параметры груза (FOB)</Title>
 
       <ToggleGroup>
-        <ToggleButton active={data.transportType === 'container'} onClick={() => onUpdate('transportType', 'container')}>
+        <ToggleButton $active={data.transportType === 'container'} onClick={() => onUpdate('transportType', 'container')}>
           Контейнер
         </ToggleButton>
-        <ToggleButton active={data.transportType === 'ltl'} onClick={() => onUpdate('transportType', 'ltl')}>
+        <ToggleButton $active={data.transportType === 'ltl'} onClick={() => onUpdate('transportType', 'ltl')}>
           Сборное авто
         </ToggleButton>
-        <ToggleButton active={data.transportType === 'air'} onClick={() => onUpdate('transportType', 'air')}>
+        <ToggleButton $active={data.transportType === 'air'} onClick={() => onUpdate('transportType', 'air')}>
           Авиа
         </ToggleButton>
       </ToggleGroup>
@@ -249,7 +249,7 @@ const StepLogisticsCargo: React.FC<Props> = ({ data, onUpdate, onNext, onBack })
 
             <Grid>
               <CurrencyInput
-                label="Вес (кг) *"
+                label={data.transportType === 'air' ? 'Вес (кг) *' : 'Вес (кг)'}
                 value={data.ltlWeight || 0}
                 onChange={v => onUpdate('ltlWeight', v)}
                 min={0}

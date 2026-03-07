@@ -11,7 +11,7 @@ if (missingEnv.length > 0) {
 }
 
 const app = express();
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3002;
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_CHAT_ID = process.env.ADMIN_CHAT_ID;
 
@@ -47,6 +47,11 @@ const asString = (value) => {
 const parsePositiveInt = (value) => {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+const parseNonNegativeAmount = (value, fallback = 0) => {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.round(parsed);
 };
 const formatRub = (value) => Math.round(Number(value) || 0).toLocaleString('ru-RU');
 const nowRu = () => new Date().toLocaleString('ru-RU');
@@ -129,6 +134,8 @@ const shipmentsStore = [
         createdAt: '2026-03-01T06:25:00.000Z',
       },
     ],
+    paymentTotalRub: 4860000,
+    paymentPaidRub: 2430000,
   },
   {
     id: 'RTX-2026-002',
@@ -166,6 +173,8 @@ const shipmentsStore = [
       },
     ],
     notifications: [],
+    paymentTotalRub: 1980000,
+    paymentPaidRub: 1220000,
   },
   {
     id: 'RTX-2026-003',
@@ -195,8 +204,12 @@ const shipmentsStore = [
       },
     ],
     notifications: [],
+    paymentTotalRub: 950000,
+    paymentPaidRub: 0,
   },
 ];
+
+shipmentsStore.forEach((shipment) => normalizeShipmentPayments(shipment));
 
 function managerPublic(manager) {
   return {
@@ -259,6 +272,13 @@ function findShipmentById(id) {
   return shipmentsStore.find((shipment) => shipment.id === id);
 }
 
+function normalizeShipmentPayments(shipment) {
+  const total = parseNonNegativeAmount(shipment.paymentTotalRub, 0);
+  const paid = parseNonNegativeAmount(shipment.paymentPaidRub, 0);
+  shipment.paymentTotalRub = Math.max(total, paid);
+  shipment.paymentPaidRub = Math.min(paid, shipment.paymentTotalRub);
+}
+
 function shipmentSummary(shipment) {
   return {
     id: shipment.id,
@@ -273,6 +293,8 @@ function shipmentSummary(shipment) {
     cargoType: shipment.cargoType,
     updatedAt: shipment.updatedAt,
     lastEvent: shipment.events[shipment.events.length - 1] || null,
+    paymentTotalRub: shipment.paymentTotalRub,
+    paymentPaidRub: shipment.paymentPaidRub,
   };
 }
 
@@ -621,10 +643,37 @@ app.post('/admin/shipments', requireManager, (req, res) => {
       },
     ],
     notifications: [],
+    paymentTotalRub: parseNonNegativeAmount(payload.paymentTotalRub, 0),
+    paymentPaidRub: parseNonNegativeAmount(payload.paymentPaidRub, 0),
   };
 
+  normalizeShipmentPayments(shipment);
   shipmentsStore.unshift(shipment);
   return res.status(201).json({ item: shipmentDetailed(shipment) });
+});
+
+app.patch('/admin/shipments/:id/payment', requireManager, (req, res) => {
+  const shipment = findShipmentById(req.params.id);
+  if (!shipment) {
+    return res.status(404).json({ error: 'Shipment not found' });
+  }
+
+  const hasTotal = Object.prototype.hasOwnProperty.call(req.body || {}, 'paymentTotalRub');
+  const hasPaid = Object.prototype.hasOwnProperty.call(req.body || {}, 'paymentPaidRub');
+  if (!hasTotal && !hasPaid) {
+    return res.status(400).json({ error: 'paymentTotalRub or paymentPaidRub is required' });
+  }
+
+  if (hasTotal) {
+    shipment.paymentTotalRub = parseNonNegativeAmount(req.body.paymentTotalRub, shipment.paymentTotalRub ?? 0);
+  }
+  if (hasPaid) {
+    shipment.paymentPaidRub = parseNonNegativeAmount(req.body.paymentPaidRub, shipment.paymentPaidRub ?? 0);
+  }
+  normalizeShipmentPayments(shipment);
+  shipment.updatedAt = nowIso();
+
+  return res.json({ item: shipmentDetailed(shipment) });
 });
 
 app.patch('/admin/shipments/:id/status', requireManager, async (req, res, next) => {

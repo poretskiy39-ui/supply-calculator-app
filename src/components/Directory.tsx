@@ -15,10 +15,10 @@ const Nav = styled.nav`
   gap: ${theme.spacing.sm};
 `;
 
-const NavItem = styled.button<{ active: boolean }>`
+const NavItem = styled.button<{ $active: boolean }>`
   padding: ${theme.spacing.sm} ${theme.spacing.md};
-  background: ${props => props.active ? theme.colors.accent : theme.colors.surface};
-  color: ${props => props.active ? theme.colors.bg : theme.colors.text};
+  background: ${props => props.$active ? theme.colors.accent : theme.colors.surface};
+  color: ${props => props.$active ? theme.colors.bg : theme.colors.text};
   border: 1px solid ${theme.colors.border};
   border-radius: ${theme.borderRadius.md};
   cursor: pointer;
@@ -26,7 +26,7 @@ const NavItem = styled.button<{ active: boolean }>`
   font-size: ${theme.typography.small};
 
   &:hover {
-    background: ${props => props.active ? theme.colors.accentHover : theme.colors.surfaceLight};
+    background: ${props => props.$active ? theme.colors.accentHover : theme.colors.surfaceLight};
   }
 `;
 
@@ -78,7 +78,7 @@ const Directory: React.FC<Props> = ({ sections }) => {
         {filteredSections.map(section => (
           <NavItem
             key={section.id}
-            active={activeSection === section.id}
+            $active={activeSection === section.id}
             onClick={() => setActiveSection(section.id)}
           >
             {section.title}

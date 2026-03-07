@@ -1,10 +1,12 @@
+// src/App.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
 import { motion, AnimatePresence } from 'framer-motion';
 import { theme, ThemeMode } from './styles/theme';
+import { buildApiUrl } from './config/api';
 import useCalculator from './hooks/useCalculator';
 import useTelegram from './hooks/useTelegram';
-import type { GeneralSettings } from './types';
+import type { GeneralSettings, RouteType } from './types';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import ProgressBar from './components/Layout/ProgressBar';
@@ -20,14 +22,20 @@ import Step5Contact from './components/Steps/Step5Contact';
 import StepLogisticsCargo from './components/StepLogisticsCargo';
 import StepLogisticsResult from './components/StepLogisticsResult';
 import SuccessMessage from './components/SuccessMessage';
+import AdminPanel from './components/Admin/AdminPanel';
+import ClientCabinet from './components/Client/ClientCabinet';
 import { PrimaryButton, SecondaryButton } from './components/UI';
+
+// ─── View type ───────────────────────────────────────────────────────────────
+type AppView = 'calculator' | 'admin' | 'cabinet';
+
+// ─── Styled ───────────────────────────────────────────────────────────────────
 
 const Shell = styled.div`
   min-height: 100vh;
   background: var(--color-bg);
 
   @media (min-width: 500px) {
-    background: var(--color-bg);
     display: flex;
     justify-content: center;
     padding: 24px;
@@ -75,10 +83,14 @@ const NavButtonSecondary = styled(SecondaryButton)`
   flex: 1;
 `;
 
+// ─────────────────────────────────────────────────────────────────────────────
+
 function App() {
   const {
     serviceType,
     setServiceType,
+    route,
+    selectRoute,
     step,
     setStep,
     settings,
@@ -95,8 +107,10 @@ function App() {
     calculateFull,
     calculateLogisticsCost,
   } = useCalculator();
+
   const { tg, showAlert, close } = useTelegram();
 
+  const [appView, setAppView] = useState<AppView>('calculator');
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDirectoryOpen, setIsDirectoryOpen] = useState(false);
   const [themeMode, setThemeMode] = useState<ThemeMode>('dark');
@@ -105,16 +119,14 @@ function App() {
   const logisticsSteps = ['Груз', 'Расчет', 'Контакты'];
 
   const handleUpdateGeneral = useCallback(
-    (newSettings: Partial<GeneralSettings>) => setSettings(prev => ({ ...prev, ...newSettings })),
+    (newSettings: Partial<GeneralSettings>) =>
+      setSettings(prev => ({ ...prev, ...newSettings })),
     [setSettings]
   );
 
-  const handleUpdateLogistics = useCallback(
-    (newSettings: Partial<GeneralSettings>) => setSettings(prev => ({ ...prev, ...newSettings })),
-    [setSettings]
-  );
-
-  const handleSelectService = (service: 'full' | 'logistics') => {
+  // Обновлён: принимает route
+  const handleSelectService = (service: 'full' | 'logistics', selectedRoute: RouteType) => {
+    selectRoute(selectedRoute);
     setServiceType(service);
     setStep(1);
   };
@@ -122,13 +134,12 @@ function App() {
   const handleMenuClick = () => setStep(0);
   const handleDirectoryClick = () => setIsDirectoryOpen(true);
   const handleCloseDirectory = () => setIsDirectoryOpen(false);
-  const handleThemeToggle = () => setThemeMode(prev => (prev === 'dark' ? 'swiss-light' : 'dark'));
+  const handleThemeToggle = () =>
+    setThemeMode(prev => (prev === 'dark' ? 'swiss-light' : 'dark'));
 
   useEffect(() => {
     document.body.setAttribute('data-theme', themeMode);
-    return () => {
-      document.body.removeAttribute('data-theme');
-    };
+    return () => document.body.removeAttribute('data-theme');
   }, [themeMode]);
 
   const handleNext = () => {
@@ -159,16 +170,14 @@ function App() {
   const handleSubmitContact = async (type: 'full' | 'logistics') => {
     if (type === 'full') {
       const result = calculateFull();
-      if (!result) {
-        showAlert('Ошибка расчета. Проверьте данные.');
-        return;
-      }
+      if (!result) { showAlert('Ошибка расчета. Проверьте данные.'); return; }
       try {
-        const response = await fetch('https://your-backend.up.railway.app/api/contact', {
+        const response = await fetch(buildApiUrl('/api/contact'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             serviceType: 'full',
+            route,
             settings,
             products,
             result,
@@ -186,19 +195,16 @@ function App() {
         showAlert('Ошибка сети. Проверьте подключение.');
       }
     } else {
-      const result = logisticsResult;
-      if (!result) {
-        showAlert('Сначала выполните расчет');
-        return;
-      }
+      if (!logisticsResult) { showAlert('Сначала выполните расчет'); return; }
       try {
-        const response = await fetch('https://your-backend.up.railway.app/api/contact', {
+        const response = await fetch(buildApiUrl('/api/contact'), {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             serviceType: 'logistics',
+            route,
             logisticsData,
-            result,
+            result: logisticsResult,
             contact,
             telegramUser: tg?.initDataUnsafe?.user,
           }),
@@ -215,8 +221,44 @@ function App() {
     }
   };
 
+  // ── Admin / Cabinet ────────────────────────────────────────────────────────
+  if (appView === 'admin') {
+    return (
+      <ThemeProvider theme={theme}>
+        <Shell>
+          <AppContainer>
+            <AdminPanel onBack={() => setAppView('calculator')} />
+          </AppContainer>
+        </Shell>
+      </ThemeProvider>
+    );
+  }
+
+  if (appView === 'cabinet') {
+    return (
+      <ThemeProvider theme={theme}>
+        <Shell>
+          <AppContainer>
+            <ClientCabinet
+              tgUser={tg?.initDataUnsafe?.user ?? null}
+              onBack={() => setAppView('calculator')}
+            />
+          </AppContainer>
+        </Shell>
+      </ThemeProvider>
+    );
+  }
+
+  // ── Calculator ─────────────────────────────────────────────────────────────
   const renderStep = () => {
-    if (step === 0) return <Step0Welcome onSelectService={handleSelectService} />;
+    if (step === 0)
+      return (
+        <Step0Welcome
+          onSelectService={handleSelectService}
+          onOpenAdmin={() => setAppView('admin')}
+          onOpenCabinet={() => setAppView('cabinet')}
+        />
+      );
 
     if (serviceType === 'full') {
       switch (step) {
@@ -232,7 +274,7 @@ function App() {
             />
           );
         case 3:
-          return <Step3Logistics settings={settings} onUpdate={handleUpdateLogistics} />;
+          return <Step3Logistics settings={settings} onUpdate={handleUpdateGeneral} />;
         case 4: {
           const result = calculateFull();
           return result ? (
@@ -244,7 +286,7 @@ function App() {
               onContinue={() => setStep(5)}
             />
           ) : (
-            <div>Ошибка расчета</div>
+            <div style={{ padding: 24, color: 'red' }}>Ошибка расчета</div>
           );
         }
         case 5:
@@ -261,11 +303,13 @@ function App() {
       }
     }
 
+    // logistics
     switch (step) {
       case 1:
         return (
           <StepLogisticsCargo
             data={logisticsData}
+            
             onUpdate={updateLogisticsData}
             onNext={handleCalculateLogistics}
             onBack={() => setStep(0)}
@@ -275,11 +319,12 @@ function App() {
         return logisticsResult ? (
           <StepLogisticsResult
             result={logisticsResult}
+            route={route}
             onBack={() => setStep(1)}
             onContinue={() => setStep(3)}
           />
         ) : (
-          <div>Ошибка расчета</div>
+          <div style={{ padding: 24 }}>Ошибка расчета</div>
         );
       case 3:
         return (
@@ -306,12 +351,15 @@ function App() {
             themeMode={themeMode}
           />
           {step > 0 && (
-            <ProgressBar step={step} steps={serviceType === 'full' ? fullSteps : logisticsSteps} />
+            <ProgressBar
+              step={step}
+              steps={serviceType === 'full' ? fullSteps : logisticsSteps}
+            />
           )}
           <Content>
             <AnimatePresence mode="wait">
               <motion.div
-                key={step + serviceType}
+                key={step + serviceType + route}
                 initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }}
@@ -323,8 +371,12 @@ function App() {
           </Content>
           {step > 0 && step < 4 && serviceType === 'full' && (
             <NavWrap>
-              {step > 1 && <NavButtonSecondary onClick={handleBack}>Назад</NavButtonSecondary>}
-              <NavButton onClick={handleNext}>{step === 3 ? 'Рассчитать' : 'Далее'}</NavButton>
+              {step > 1 && (
+                <NavButtonSecondary onClick={handleBack}>Назад</NavButtonSecondary>
+              )}
+              <NavButton onClick={handleNext}>
+                {step === 3 ? 'Рассчитать' : 'Далее'}
+              </NavButton>
             </NavWrap>
           )}
           {showSuccess && <SuccessMessage onClose={() => setShowSuccess(false)} />}
